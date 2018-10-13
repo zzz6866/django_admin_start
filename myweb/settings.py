@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'hbuipsj#g5n!c)r-c8@7i(1kegsf9##r*#&8$m6f(6$&b_(!)7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['192.168.0.2', 'localhost', '127.0.0.1', 'start0.synology.me']
 # ALLOWED_HOSTS = ['*']
@@ -36,7 +36,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'coin_bot',
+    'myweb',
+    'stock',
 ]
 
 MIDDLEWARE = [
@@ -49,7 +50,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'coin_bot.urls'
+ROOT_URLCONF = 'myweb.urls'
 
 TEMPLATES = [
     {
@@ -68,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'coin_bot.wsgi.application'
+WSGI_APPLICATION = 'myweb.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
@@ -83,10 +84,10 @@ DATABASES = {
         'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        'HOST': '172.17.0.3',  # NAS 배포용
-        'PORT': '5432',
-        # 'HOST': '192.168.0.2',  # LOCAL 개발용
-        # 'PORT': '32768',
+        # 'HOST': '172.17.0.3',  # NAS 배포용
+        # 'PORT': '5432',
+        'HOST': '192.168.0.2',  # LOCAL 개발용
+        'PORT': '32768',
     }
 }
 
