@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.1/ref/settings/
 """
 
 import os
+import djcelery
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -22,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'hbuipsj#g5n!c)r-c8@7i(1kegsf9##r*#&8$m6f(6$&b_(!)7'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['192.168.0.2', 'localhost', '127.0.0.1', 'start0.synology.me']
 # ALLOWED_HOSTS = ['*']
@@ -39,6 +40,8 @@ INSTALLED_APPS = [
     'django_jenkins',
     'myweb',
     'stock',
+    'djcelery',
+    'kombu.transport.django',
 ]
 
 MIDDLEWARE = [
@@ -138,3 +141,6 @@ JENKINS_TASKS = (
     'django_jenkins.tasks.run_csslint',
     'django_jenkins.tasks.run_sloccount'
 )
+
+# djcelery Setting
+djcelery.setup_loader()
