@@ -1,6 +1,8 @@
 pip freeze > requirements.txt # 인터프리터 리스트 설치
 pip install -r requirements.txt # 인터프리터 생성 (로컬에서 만든 리스트)
-python manage.py celery myweb worker -l info # celery 실행
+python manage.py celery -A myweb worker -l info & # celery 실행
+python manage.py celery -A myweb beat info & # celery 실행
+
 python manage.py makemigrations
 python manage.py migrate
 python manage.py migrate kombu_transport_django
