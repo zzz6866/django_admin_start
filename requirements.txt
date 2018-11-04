@@ -1,3 +1,7 @@
+PyQt5
+qt_backport
+beautifulsoup4
+selenium
 pycurl
 amqp==1.4.9
 anyjson==0.3.3

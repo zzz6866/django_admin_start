@@ -88,10 +88,10 @@ DATABASES = {
         'NAME': 'postgres',
         'USER': 'postgres',
         'PASSWORD': 'postgres',
-        'HOST': '172.17.0.2',  # NAS 배포용
-        'PORT': '5432',
-        # 'HOST': '192.168.0.2',  # LOCAL 개발용
-        # 'PORT': '32768',
+        # 'HOST': '172.17.0.2',  # NAS 배포용
+        # 'PORT': '5432',
+        'HOST': '192.168.0.2',  # LOCAL 개발용
+        'PORT': '32768',
     }
 }
 

@@ -1,12 +1,10 @@
 from __future__ import absolute_import
 
 import os
-from datetime import timedelta
 
 from celery import Celery
 
 # Django의 세팅 모듈을 Celery의 기본으로 사용하도록 등록합니다.
-from celery.schedules import crontab
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'myweb.settings')
 
