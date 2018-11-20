@@ -1,11 +1,16 @@
-from datetime import datetime
+import datetime
 
+import pytz
 from django.core.validators import RegexValidator
 from django.db import models
+from time import gmtime, strftime
 
 
 # Create your models here.
 # 거래소 마지막 거래 정보
+from coin_bot import settings
+
+
 class PublicTicker(models.Model):
     coinCode = models.CharField(max_length=7)
     openingPrice = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0)
@@ -20,10 +25,12 @@ class PublicTicker(models.Model):
     sellPrice = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0)
     dayFluctate = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0)
     dayFluctate_rate = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0.0)
-    date = models.DateTimeField
+    date = models.DateTimeField(null=True, blank=True)
 
     @classmethod
     def jsonToModel(cls, coinCode=None, json=None, date=None):
+        # datetime.fromtimestamp(1350663248, tz= pytz.timezone('America/New_York'))
+        timestamp = datetime.datetime.fromtimestamp(float(date) / 1000.0, tz=pytz.timezone(settings.TIME_ZONE)).strftime('%Y-%m-%d %H:%M:%S.%f')
         model = cls(coinCode=coinCode,
                     openingPrice=json['opening_price'],
                     closingPrice=json['closing_price'],
@@ -37,6 +44,6 @@ class PublicTicker(models.Model):
                     sellPrice=json['sell_price'],
                     dayFluctate=json['24H_fluctate'],
                     dayFluctate_rate=json['24H_fluctate_rate'],
-                    date=date.strptime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                    date=timestamp,
                     )
         model.save()

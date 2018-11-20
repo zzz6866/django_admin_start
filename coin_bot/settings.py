@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'coin.apps.CoinConfig',
-    # 'coin',
+    'django_celery_beat',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
@@ -138,16 +139,16 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # Celery application definition
 # http://docs.celeryproject.org/en/v4.2.1/userguide/configuration.html
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = 'db+postgresql://postgres:postgres@192.168.0.2:32768/postgres'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Seoul'
 CELERY_CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
-CELERY_BEAT_SCHEDULE = {
-    'public_ticker': {
-        'task': 'tasks.publicTicker',
-        'schedule': 3.0,
-        'args': ('ed44b6717266ba4deb8be23ee709f866', '23ed5c220f0ac1eae571ede8c5c9225f')
-    },
-}
+# CELERY_BEAT_SCHEDULE = {
+#     'public_ticker': {
+#         'task': 'tasks.publicTicker',
+#         'schedule': 3.0,
+#         'args': ('ed44b6717266ba4deb8be23ee709f866', '23ed5c220f0ac1eae571ede8c5c9225f')
+#     },
+# }

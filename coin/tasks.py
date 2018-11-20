@@ -1,13 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 from celery import task
+from celery.utils.log import get_task_logger
 
 from .XCoinApiClient import XCoinAPI
 from .models import PublicTicker as publicTicker
 
 
-@task(name='tasks.publicTicker')
+logger = get_task_logger(__name__)
+
+@task
 def getPublicTicker(apiKey, apiSecret):
-    # Do something...
+    print("getPublicTicker START!")
     api = XCoinAPI(apiKey, apiSecret)
 
     # rgParams = { # parameter 불필요
@@ -27,10 +30,11 @@ def getPublicTicker(apiKey, apiSecret):
     # print(results['status'])
 
     for (k, v) in results['data'].items():
-        print(v)
+        # print(v)
         date = results['data']['date']
+        # print(date)
         if k != 'date':
-            print("k: " + k)
+            # print("k: " + k)
             publicTicker.jsonToModel(coinCode=k, json=v, date=date)
 
         # else:
