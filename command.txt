@@ -1,1 +1,6 @@
 celery -A proj beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler # 셀러리 worker, beat 서비스 ㅅ ㅣ작
+find . -path "*/migrations/*.py" -not -name "__init__ # 마이그레이션 삭제
+find . -path "*/migrations/*.pyc"  -delete # 마이그레이션 삭제
+python manage.py makemigrations # 마이그레이션 생성
+python manage.py migrate # 마이그레이션 실행
+

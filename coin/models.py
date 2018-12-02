@@ -8,6 +8,8 @@ from time import gmtime, strftime
 
 # Create your models here.
 # 거래소 마지막 거래 정보
+from django.utils import timezone
+
 from coin_bot import settings
 
 
@@ -30,7 +32,13 @@ class PublicTicker(models.Model):
     @classmethod
     def jsonToModel(cls, coinCode=None, json=None, date=None):
         # datetime.fromtimestamp(1350663248, tz= pytz.timezone('America/New_York'))
-        timestamp = datetime.datetime.fromtimestamp(float(date) / 1000.0, tz=pytz.timezone(settings.TIME_ZONE)).strftime('%Y-%m-%d %H:%M:%S.%f')
+        timestamp = datetime.datetime.fromtimestamp(float(date) / 1000.0).strftime('%Y-%m-%d %H:%M:%S')
+        timestamp = datetime.datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
+        # localtz = pytz.timezone(settings.TIME_ZONE)
+        # timestamp = localtz.localize(timestamp)
+        timestamp = timezone.make_aware(timestamp)
+        print(timestamp)
+
         model = cls(coinCode=coinCode,
                     openingPrice=json['opening_price'],
                     closingPrice=json['closing_price'],
