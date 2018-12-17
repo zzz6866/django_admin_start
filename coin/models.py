@@ -1,16 +1,11 @@
 import datetime
 
-import pytz
 from django.core.validators import RegexValidator
 from django.db import models
-from time import gmtime, strftime
-
 
 # Create your models here.
 # 거래소 마지막 거래 정보
 from django.utils import timezone
-
-from coin_bot import settings
 
 
 class PublicTicker(models.Model):
