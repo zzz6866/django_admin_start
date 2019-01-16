@@ -31,9 +31,9 @@ def getPublicTicker(apiKey, apiSecret):
 
     for (k, v) in results['data'].items():
         # print(v)
-        date = results['data']['date']
-        # print(date)
-        if k != 'date':
+        if k != 'date' and len(v) > 0:
+            date = results['data']['date']
+            # print(date)
             # print("k: " + k)
             publicTicker.jsonToModel(coinCode=k, json=v, date=date)
 
