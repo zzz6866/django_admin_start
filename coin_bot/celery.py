@@ -3,8 +3,9 @@ import os
 from celery import Celery
 
 # set the default Django settings module for the 'celery' program.
+from coin_bot.settings.local import INSTALLED_APPS
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'coin_bot.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'coin_bot.settings.local')
 os.environ.setdefault('FORKED_BY_MULTIPROCESSING', '1')  # TODO: ValueError: not enough values to unpack (expected 3, got 0) <= 에러 발생으로 인한 추가
 app = Celery('coin_bot')
 
@@ -13,7 +14,7 @@ app = Celery('coin_bot')
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
 app.config_from_object('django.conf:settings', namespace='CELERY')
-# app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
+# app.autodiscover_tasks(lambda: INSTALLED_APPS)
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()

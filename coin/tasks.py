@@ -1,14 +1,15 @@
 from __future__ import absolute_import, unicode_literals
-from celery import task
+
+from celery import shared_task
 from celery.utils.log import get_task_logger
 
 from .XCoinApiClient import XCoinAPI
 from .models import PublicTicker as publicTicker
 
-
 logger = get_task_logger(__name__)
 
-@task
+
+@shared_task
 def getPublicTicker(apiKey, apiSecret):
     print("getPublicTicker START!")
     api = XCoinAPI(apiKey, apiSecret)
@@ -28,6 +29,7 @@ def getPublicTicker(apiKey, apiSecret):
 
     results = api.xcoinApiCall("/public/ticker/ALL", {})
     # print(results['status'])
+    # print(results)
 
     for (k, v) in results['data'].items():
         # print(v)
@@ -42,3 +44,9 @@ def getPublicTicker(apiKey, apiSecret):
         #     print("last: " + v["closing_price"])
         #     print("sell: " + v["sell_price"])
         #     print("buy: " + v["buy_price"])
+
+
+@shared_task
+def send_notifiction():
+    print('Here I\’m')
+    # Another trick

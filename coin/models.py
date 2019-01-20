@@ -33,6 +33,7 @@ class PublicTicker(models.Model):
         # timestamp = localtz.localize(timestamp)
         timestamp = timezone.make_aware(timestamp)
         # print(timestamp)
+        # print(coinCode)
 
         model = cls(coinCode=coinCode,
                     openingPrice=json['opening_price'],
