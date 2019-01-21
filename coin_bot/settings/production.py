@@ -139,7 +139,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 # Celery application definition
 # http://docs.celeryproject.org/en/v4.2.1/userguide/configuration.html
 CELERY_BROKER_URL = 'redis://localhost:6379/0'
-CELERY_RESULT_BACKEND = 'db+postgresql://postgres:postgres@192.168.0.2:32768/postgres'
+CELERY_RESULT_BACKEND = 'db+postgresql://postgres:postgres@172.17.0.2:5432/postgres'
 CELERY_ACCEPT_CONTENT = ['application/json']
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TASK_SERIALIZER = 'json'

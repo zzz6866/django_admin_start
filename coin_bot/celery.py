@@ -5,7 +5,7 @@ from celery import Celery
 # set the default Django settings module for the 'celery' program.
 from coin_bot.settings.local import INSTALLED_APPS
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'coin_bot.settings.production')
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'coin_bot.settings.production') # 환경 변수에 선언하여 사용하기 때문에 주석 처리
 os.environ.setdefault('FORKED_BY_MULTIPROCESSING', '1')  # TODO: ValueError: not enough values to unpack (expected 3, got 0) <= 에러 발생으로 인한 추가
 app = Celery('coin_bot')
 
