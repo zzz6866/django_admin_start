@@ -4,15 +4,15 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 
 from .XCoinApiClient import XCoinAPI
-from .models import PublicTicker as publicTicker
+from .models import PublicTicker
 
 logger = get_task_logger(__name__)
 
 
 @shared_task
-def getPublicTicker(apiKey, apiSecret):
+def get_public_ticker(api_key, api_secret):
     print("getPublicTicker START!")
-    api = XCoinAPI(apiKey, apiSecret)
+    api = XCoinAPI(api_key, api_secret)
 
     # rgParams = { # parameter 불필요
     #     "order_currency": "ALL",
@@ -37,7 +37,7 @@ def getPublicTicker(apiKey, apiSecret):
             date = results['data']['date']
             # print(date)
             # print("k: " + k)
-            publicTicker.jsonToModel(coinCode=k, json=v, date=date)
+            PublicTicker.set_json(coin_code=k, json=v, date=date)
 
         # else:
         #     print('--------------' + k + '---------------')
@@ -48,5 +48,5 @@ def getPublicTicker(apiKey, apiSecret):
 
 @shared_task
 def send_notifiction():
-    print('Here I\’m')
+    print("Here I\’m")
     # Another trick
