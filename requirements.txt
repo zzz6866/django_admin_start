@@ -1,3 +1,4 @@
+talib
 alabaster==0.7.12
 amqp==2.3.2
 anaconda-client==1.7.2

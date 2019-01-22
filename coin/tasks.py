@@ -1,5 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 
+import numpy as np
+import talib
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
@@ -11,7 +13,7 @@ logger = get_task_logger(__name__)
 
 @shared_task
 def get_public_ticker(api_key, api_secret):
-    print("getPublicTicker START!")
+    # print("getPublicTicker START!")
     api = XCoinAPI(api_key, api_secret)
 
     # rgParams = { # parameter 불필요
@@ -48,5 +50,12 @@ def get_public_ticker(api_key, api_secret):
 
 @shared_task
 def send_notifiction():
-    print("Here I\’m")
+    print("START")
+    # Another trick
+
+
+@shared_task
+def expected_indicator():
+    print("expected_indicator START !!")
+    print(talib.get_functions())
     # Another trick
