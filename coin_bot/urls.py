@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from coin import views
+from coin_bot import views
 
 urlpatterns = [
     url(r'^index$', views.index),
