@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# conda install -c quantopian ta-lib # anaconda 설치 패턴 conda install -c conda-forge celery
 # set DJANGO_SETTINGS_MODULE=alldev.settings.production # Windows shell
 export DJANGO_SETTINGS_MODULE=alldev.settings.production # Unix Bash shell
 
