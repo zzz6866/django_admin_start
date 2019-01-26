@@ -33,11 +33,14 @@ def find_new_torrent():
     #         print(table_file)
 
     # Chrome의 경우 | 아까 받은 chromedriver의 위치를 지정해준다.
-    options = webdriver.ChromeOptions()
-    options.add_argument('headless')
+    driver = webdriver.Chrome('selenium/chromedriver')
+    # PhantomJS의 경우 | 아까 받은 PhantomJS의 위치를 지정해준다.
+    # driver = webdriver.PhantomJS('D:\\Downloads\\phantomjs-2.1.1-windows\\bin\\phantomjs')
+    driver.get("http://www.python.org")
 
-    # driver = webdriver.Chrome('chromedriver')
-    driver = webdriver.Chrome(chrome_options=options)
+    print(driver.current_url)
+    print(driver.title)
+    print(driver.page_source)
 
 
 if __name__ == '__main__':
