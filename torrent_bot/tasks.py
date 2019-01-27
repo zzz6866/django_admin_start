@@ -43,7 +43,7 @@ def find_new_torrent():
         # chromedriver_path = BASE_DIR + r"/selenium/chromedriver_mac64/chromedriver"
         chromedriver_path = r"/usr/local/bin/chromedriver"
     else:
-        chromedriver_path = BASE_DIR + r"/selenium/chromedriver_linux64/chromedriver"
+        chromedriver_path = BASE_DIR + r"/usr/bin/chromedriver"
     driver = webdriver.Chrome(executable_path=chromedriver_path)
     print(chromedriver_path)
 
@@ -54,7 +54,3 @@ def find_new_torrent():
     page_source = driver.page_source
     driver.close()
     return page_source
-
-
-if __name__ == '__main__':
-    find_new_torrent()
