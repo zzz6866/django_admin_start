@@ -44,6 +44,7 @@ def find_new_torrent():
         chromedriver = BASE_DIR + r"/selenium/chromedriver_mac64/chromedriver"
     else:
         chromedriver = BASE_DIR + r"/selenium/chromedriver_linux64/chromedriver"
+    print(chromedriver)
     driver = webdriver.Chrome(chromedriver)
     # PhantomJS의 경우 | 아까 받은 PhantomJS의 위치를 지정해준다.
     # driver = webdriver.PhantomJS('/selenium/phantomjs-2.1.1-linux-x86_64/bin/phantomjs')
