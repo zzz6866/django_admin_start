@@ -46,6 +46,9 @@ def find_new_torrent():
     else:
         chromedriver_path = r"/usr/bin/chromedriver"
         options.binary_location = r"/usr/bin/google-chrome-stable"
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
     driver = webdriver.Chrome(chromedriver_path, chrome_options=options)
     print(chromedriver_path)
 
