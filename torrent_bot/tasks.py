@@ -37,15 +37,18 @@ def find_new_torrent():
     #         print(table_file)
 
     # Chrome의 경우 | 아까 받은 chromedriver의 위치를 지정해준다.
+    options = webdriver.ChromeOptions()
     if platform.system() == 'Windows':
         chromedriver_path = BASE_DIR + r"\selenium\chromedriver_win32\chromedriver"
     elif platform.system() == 'Darwin':
         chromedriver_path = BASE_DIR + r"/selenium/chromedriver_mac64/chromedriver"
     else:
         # chromedriver_path = BASE_DIR + r"/selenium/chromedriver_linux64/chromedriver"
-        chromedriver_path = r"/usr/bin/chromedriver"
+        chromedriver_path = BASE_DIR + r"/selenium/chromedriver_linux64/chromedriver"
+        options.binary_location = "/usr/bin/chromedriver"
+
     print(chromedriver_path)
-    driver = webdriver.Chrome(executable_path=chromedriver_path)
+    driver = webdriver.Chrome(chromedriver_path, chrome_options=options)
     # PhantomJS의 경우 | 아까 받은 PhantomJS의 위치를 지정해준다.
     # driver = webdriver.PhantomJS('/selenium/phantomjs-2.1.1-linux-x86_64/bin/phantomjs')
     # driver = webdriver.PhantomJS('D:\\Downloads\\phantomjs-2.1.1-windows\\bin\\phantomjs')
