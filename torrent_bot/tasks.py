@@ -42,7 +42,8 @@ def find_new_torrent():
     elif platform.system() == 'Darwin':
         chromedriver_path = BASE_DIR + r"/selenium/chromedriver_mac64/chromedriver"
     else:
-        chromedriver_path = BASE_DIR + r"/selenium/chromedriver_linux64/chromedriver"
+        # chromedriver_path = BASE_DIR + r"/selenium/chromedriver_linux64/chromedriver"
+        chromedriver_path = r"/usr/bin/chromedriver"
     print(chromedriver_path)
     driver = webdriver.Chrome(executable_path=chromedriver_path)
     # PhantomJS의 경우 | 아까 받은 PhantomJS의 위치를 지정해준다.
