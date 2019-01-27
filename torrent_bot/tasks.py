@@ -44,7 +44,7 @@ def find_new_torrent():
         # chromedriver_path = BASE_DIR + r"/selenium/chromedriver_mac64/chromedriver"
         chromedriver_path = r"/usr/local/bin/chromedriver"
     else:
-        chromedriver_path = BASE_DIR + r"/usr/bin/chromedriver"
+        chromedriver_path = r"/usr/bin/chromedriver"
         options.binary_location = r"/usr/bin/google-chrome-stable"
     driver = webdriver.Chrome(chromedriver_path, chrome_options=options)
     print(chromedriver_path)
