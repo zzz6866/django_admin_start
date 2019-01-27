@@ -37,6 +37,7 @@ def find_new_torrent():
     #         print(table_file)
 
     # Chrome의 경우 | 아까 받은 chromedriver의 위치를 지정해준다.
+    options = webdriver.ChromeOptions()
     if platform.system() == 'Windows':
         chromedriver_path = BASE_DIR + r"\selenium\chromedriver_win32\chromedriver"
     elif platform.system() == 'Darwin':
@@ -44,7 +45,8 @@ def find_new_torrent():
         chromedriver_path = r"/usr/local/bin/chromedriver"
     else:
         chromedriver_path = BASE_DIR + r"/usr/bin/chromedriver"
-    driver = webdriver.Chrome(executable_path=chromedriver_path)
+        options.binary_location = r"/usr/bin/google-chrome-stable"
+    driver = webdriver.Chrome(chromedriver_path, chrome_options=options)
     print(chromedriver_path)
 
     # PhantomJS의 경우 | 아까 받은 PhantomJS의 위치를 지정해준다.
