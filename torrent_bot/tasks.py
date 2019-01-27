@@ -1,10 +1,14 @@
 from __future__ import absolute_import, unicode_literals
 
+import platform
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
 # import requests
 # from bs4 import BeautifulSoup
 from selenium import webdriver
+
+from alldev.settings.base import BASE_DIR
 
 logger = get_task_logger(__name__)
 
@@ -33,15 +37,18 @@ def find_new_torrent():
     #         print(table_file)
 
     # Chrome의 경우 | 아까 받은 chromedriver의 위치를 지정해준다.
-    driver = webdriver.Chrome('/selenium/chromedriver_linux64/chromedriver')
+    # driver = webdriver.Chrome('D:\\Downloads\\chromedriver_win32\\chromedriver')
+    if platform.system() == 'Windows':
+        chromedriver = BASE_DIR + r"\selenium\chromedriver_win32\chromedriver"
+    elif platform.system() == 'Darwin':
+        chromedriver = BASE_DIR + "/selenium/chromedriver_mac64/chromedriver"
+    else:
+        chromedriver = BASE_DIR + "/selenium/chromedriver_linux64/chromedriver"
+    driver = webdriver.Chrome(chromedriver)
     # PhantomJS의 경우 | 아까 받은 PhantomJS의 위치를 지정해준다.
-    driver = webdriver.PhantomJS('/selenium/phantomjs-2.1.1-linux-x86_64/bin/phantomjs')
+    # driver = webdriver.PhantomJS('/selenium/phantomjs-2.1.1-linux-x86_64/bin/phantomjs')
+    # driver = webdriver.PhantomJS('D:\\Downloads\\phantomjs-2.1.1-windows\\bin\\phantomjs')
     driver.get("http://www.python.org")
-
-    print(driver.current_url)
-    print(driver.title)
-    print(driver.page_source)
-
-
-if __name__ == '__main__':
-    find_new_torrent()
+    page_source = driver.page_source
+    driver.close()
+    return page_source
