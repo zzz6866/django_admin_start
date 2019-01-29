@@ -1,22 +1,20 @@
 from __future__ import absolute_import, unicode_literals
 
-import platform
-
+from bs4 import BeautifulSoup
 from celery import shared_task
 from celery.utils.log import get_task_logger
-# import requests
-# from bs4 import BeautifulSoup
-from selenium import webdriver
+from numpy import long
+from selenium.webdriver.common.by import By
 
-from alldev.settings.base import BASE_DIR
+from torrent_bot.common import SeleniumChrome
 
 logger = get_task_logger(__name__)
 
 
 @shared_task
-def find_new_torrent():
-    # print('START SEARCH NEW VIDEO!!!')
-    # base_url = 'https://torrentwal.com'
+def find_new_torrent_movie():
+    print('START SEARCH NEW MOVIE!!!')
+    base_url = 'https://torrentwal.com'
     # res_list = requests.get(base_url + '/torrent_movie/torrent1.htm')
     # res_list.encoding = 'utf-8'
     # html = res_list.text
@@ -36,26 +34,41 @@ def find_new_torrent():
     #         table_file = soup.find_all('table', attrs={'id': 'file_table'})
     #         print(table_file)
 
-    # Chrome의 경우 | 아까 받은 chromedriver의 위치를 지정해준다.
-    options = webdriver.ChromeOptions()
-    if platform.system() == 'Windows':
-        chromedriver_path = BASE_DIR + r"\selenium\chromedriver_win32\chromedriver"
-    elif platform.system() == 'Darwin':
-        # chromedriver_path = BASE_DIR + r"/selenium/chromedriver_mac64/chromedriver"
-        chromedriver_path = r"/usr/local/bin/chromedriver"
-    else:
-        chromedriver_path = r"/usr/bin/chromedriver"
-        options.binary_location = r"/usr/bin/google-chrome-stable"
-        options.add_argument('--headless')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-    driver = webdriver.Chrome(chromedriver_path, chrome_options=options)
-    print(chromedriver_path)
+    # Chrome의 경우 아까 받은 chromedriver의 위치를 지정해준다.
+    chromedriver = SeleniumChrome().driver
+    # print(chromedriver_path) # chromedriver 프로그램 경로 또는 설치 경로
 
-    # PhantomJS의 경우 | 아까 받은 PhantomJS의 위치를 지정해준다.
+    # PhantomJS의 경우 아까 받은 PhantomJS의 위치를 지정해준다.
     # driver = webdriver.PhantomJS(executable_path=BASE_DIR + r'/selenium/phantomjs-2.1.1-linux-x86_64/bin/phantomjs')
 
-    driver.get("https://torrentwal.com/torrent_movie/337001.html")
-    page_source = driver.page_source
-    driver.close()
-    return page_source
+    chromedriver.get(base_url + "/torrent_movie/torrent1.htm")
+    html_list = chromedriver.page_source
+    # print(html)
+    soup = BeautifulSoup(html_list, 'html.parser')
+    newest_table = soup.select('div#main_body > table.board_list > tbody > tr')  #
+    # print(newest_table)
+    for tr in newest_table:
+        strong_today = tr.find('td', attrs={'class': 'datetime'}).find('strong', recursive=False)
+        if strong_today or True:
+            a_href = tr.find('td', attrs={'class': 'subject'}).find('a', recursive=False)['href']
+            detail_url = base_url + a_href.replace('..', '')
+            # 토렌트 idx 추출
+            torrent_idx = a_href.split('/')[-1].replace('.html', '')
+            print(torrent_idx)
+            # chromedriver.get(detail_url)
+            # html_detail = chromedriver.page_source
+            # soup = BeautifulSoup(html_detail, 'html.parser')
+            # table_file = soup.find('table', attrs={'id': 'file_table'}).find_all('tr')
+            # print(table_file)
+            # for i, detail_tr in enumerate(table_file):
+            #     download_url = detail_tr.find('td').find('a', recursive=False)
+            #     if download_url is not None and "magnet" not in str(download_url):
+            #         print(i, "magnet" in str(download_url), download_url['href'])
+            #         if "javascript" in str(download_url['href']).lower():
+            #             print("javascript", )
+            #         else:
+            #             print("Not javascript")
+            #
+            #         chromedriver.find_element_by_css_selector('#file_table > tbody > tr:nth-child(' + str(i + 1) + ') > td > a').click()
+    # Chrome Driver Close
+    chromedriver.close()

@@ -8,6 +8,6 @@ from torrent_bot import tasks
 
 
 def index_html(request):
-    page_source = tasks.find_new_torrent()
-    return render(request, 'torrrent/index.html', {"page_source": page_source})
+    tasks.find_new_torrent_movie()
+    return render(request, 'torrrent/index.html',)
     # return HttpResponse("aaaa")

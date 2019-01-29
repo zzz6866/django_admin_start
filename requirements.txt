@@ -1,3 +1,4 @@
+beautifulsoup4
 amqp==2.4.0
 anyjson==0.3.3
 billiard==3.5.0.5
