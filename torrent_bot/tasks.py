@@ -1,12 +1,11 @@
 from __future__ import absolute_import, unicode_literals
 
 from bs4 import BeautifulSoup
-from celery import shared_task
+from celery import shared_task, current_task
 from celery.utils.log import get_task_logger
-from numpy import long
-from selenium.webdriver.common.by import By
 
 from torrent_bot.common import SeleniumChrome
+from torrent_bot.models import TorrentMovie
 
 logger = get_task_logger(__name__)
 
@@ -14,6 +13,7 @@ logger = get_task_logger(__name__)
 @shared_task
 def find_new_torrent_movie():
     print('START SEARCH NEW MOVIE!!!')
+    task_id = current_task.request.id
     base_url = 'https://torrentwal.com'
     # res_list = requests.get(base_url + '/torrent_movie/torrent1.htm')
     # res_list.encoding = 'utf-8'
@@ -50,11 +50,20 @@ def find_new_torrent_movie():
     for tr in newest_table:
         strong_today = tr.find('td', attrs={'class': 'datetime'}).find('strong', recursive=False)
         if strong_today or True:
-            a_href = tr.find('td', attrs={'class': 'subject'}).find('a', recursive=False)['href']
-            detail_url = base_url + a_href.replace('..', '')
+            a_href = tr.find('td', attrs={'class': 'subject'}).find('a', recursive=False)
+            detail_url = base_url + a_href['href'].replace('..', '')
             # 토렌트 idx 추출
-            torrent_idx = a_href.split('/')[-1].replace('.html', '')
-            print(torrent_idx)
+            torrent_idx = a_href['href'].split('/')[-1].replace('.html', '')
+            try:
+                torrent_movie = TorrentMovie.objects.get(torrent_id=torrent_idx)
+                torrent_movie.torrent_movie_name = a_href.string
+                torrent_movie.torrent_detail_url = detail_url
+                torrent_movie.save()
+            except TorrentMovie.DoesNotExist:
+                torrent_movie = TorrentMovie(torrent_id=torrent_idx, torrent_movie_name=a_href.string, torrent_detail_url=detail_url, task_id=task_id)
+                torrent_movie.save()
+
+            # print(torrent_idx)
             # chromedriver.get(detail_url)
             # html_detail = chromedriver.page_source
             # soup = BeautifulSoup(html_detail, 'html.parser')

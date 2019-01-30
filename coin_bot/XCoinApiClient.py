@@ -6,14 +6,14 @@
 #
 # Compatible with python3 version.
 
-import sys
-import time
-import math
 import base64
-import hmac, hashlib
-import urllib.parse
-import pycurl
+import hashlib
+import hmac
 import json
+import math
+import pycurl
+import time
+import urllib.parse
 from io import StringIO
 
 import certifi

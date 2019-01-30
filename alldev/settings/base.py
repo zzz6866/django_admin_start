@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'coin_bot.apps.CoinBotConfig',
     'django_celery_beat',
     'django_celery_results',
+    'torrent_bot.apps.CoinBotConfig',
 ]
 
 MIDDLEWARE = [
