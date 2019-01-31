@@ -54,14 +54,8 @@ def find_new_torrent_movie():
             detail_url = base_url + a_href['href'].replace('..', '')
             # 토렌트 idx 추출
             torrent_idx = a_href['href'].split('/')[-1].replace('.html', '')
-            try:
-                torrent_movie = TorrentMovie.objects.get(torrent_id=torrent_idx)
-                torrent_movie.torrent_movie_name = a_href.string
-                torrent_movie.torrent_detail_url = detail_url
-                torrent_movie.save()
-            except TorrentMovie.DoesNotExist:
-                torrent_movie = TorrentMovie(torrent_id=torrent_idx, torrent_movie_name=a_href.string, torrent_detail_url=detail_url, task_id=task_id)
-                torrent_movie.save()
+            TorrentMovie.objects.get_or_create(torrent_id=torrent_idx,
+                                               defaults={'torrent_movie_name': a_href.string, 'torrent_detail_url': detail_url, 'task_id': task_id})
 
             # print(torrent_idx)
             # chromedriver.get(detail_url)
