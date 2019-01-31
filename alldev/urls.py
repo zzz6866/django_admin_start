@@ -15,9 +15,11 @@ Including another URLconf
 """
 from django.conf.urls import url, include
 from django.contrib import admin
+from django.http import HttpResponseRedirect
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
+    url(r'^$', lambda r: HttpResponseRedirect('admin/')),
     url(r'^admin/', admin.site.urls),
     url(r'^coin/', include('coin_bot.urls')),
     url(r'^torrent/', include('torrent_bot.urls')),
