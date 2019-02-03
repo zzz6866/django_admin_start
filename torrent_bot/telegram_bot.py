@@ -40,13 +40,13 @@ class TelegramBot:
         # today = datetime.now().date()
         # today = datetime.combine(today, time())
         torrent_movie_list = TorrentMovie.objects.filter(date__gte=datetime.now().date())
-        # print(torrent_movie_list.query)
+        print(torrent_movie_list.query)
         msg = "신규 등로된 영화 목록\n"
 
         for (i, entry) in enumerate(torrent_movie_list):
             msg += str(i + 1) + '. ' + entry.torrent_movie_name + "\n"
         # print(msg)
-        # self.bot.send_message(chat_id="214363528", text=msg)
+        # self.bot.send_message(chat_id="214363528", text=msg)  # TEST
         telebot_send_list = TelegramBotEnableStatus.objects.filter(enabled=True)
         for entry in telebot_send_list:
             self.bot.send_message(chat_id=entry.chat_id, text=msg)
