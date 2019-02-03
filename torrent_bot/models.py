@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.db import models
 
 
@@ -11,7 +9,7 @@ class TorrentMovie(models.Model):
     torrent_movie_name = models.CharField(max_length=255)
     torrent_detail_url = models.CharField(max_length=500)
     task_id = models.CharField(max_length=100, null=True)
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(auto_now=True)
 
 
 # 사용자별 봇 활성화 상태
@@ -19,4 +17,4 @@ class TorrentMovie(models.Model):
 # 사용자가 /stop  누르면 비활성화
 class TelegramBotEnableStatus(models.Model):
     chat_id = models.BigIntegerField(null=False, unique=True)
-    enabled = models.BooleanField(primary_key=True, default=False)
+    enabled = models.BooleanField(default=False)

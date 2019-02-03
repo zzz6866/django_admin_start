@@ -40,14 +40,16 @@ class TelegramBot:
         # today = datetime.now().date()
         # today = datetime.combine(today, time())
         torrent_movie_list = TorrentMovie.objects.filter(date__gte=datetime.now().date())
-        print(torrent_movie_list.query)
+        # print(torrent_movie_list.query)
         msg = "신규 등로된 영화 목록\n"
 
         for (i, entry) in enumerate(torrent_movie_list):
             msg += str(i + 1) + '. ' + entry.torrent_movie_name + "\n"
-        print(msg)
+        # print(msg)
         # self.bot.send_message(chat_id="214363528", text=msg)
-        self.bot.send_message(chat_id="214363528", text=msg)
+        telebot_send_list = TelegramBotEnableStatus.objects.filter(enabled=True)
+        for entry in telebot_send_list:
+            self.bot.send_message(chat_id=entry.chat_id, text=msg)
 
     def process_commands(self, msg):
 
@@ -55,32 +57,30 @@ class TelegramBot:
         chat_id: (integer) 채팅 ID
         text:    (string)  사용자가 보낸 메시지 내용
         """
-        self.msg_id = msg.message_id
-        self.chat_id = msg.chat.id
-        self.text = msg.text
-        print(self.msg_id, self.text)
+        self.msg_id = msg['message_id']
+        self.chat_id = msg['chat']['id']
+        self.text = msg['text']
+        # print(self.msg_id, self.text)
         if not self.text:
             return
-        if BUTTON_START == self.text:
+        elif BUTTON_START == self.text:
             self.button_start(self.chat_id)
             return
-        if not self.get_enabled(self.chat_id):
+        elif not self.get_enabled(self.chat_id):
             return
-        if BUTTON_STOP == self.text:
+        elif BUTTON_STOP == self.text:
             self.button_stop(self.chat_id)
             return
-        # if CMD_HELP == text:
+        # elif CMD_HELP == text:
         #     cmd_help(chat_id)
         #     return
-        # cmd_broadcast_match = re.match('^' + CMD_BROADCAST + ' (.*)', text)
-        # if cmd_broadcast_match:
-        #     cmd_broadcast(chat_id, cmd_broadcast_match.group(1))
-        #     return
+        else:
+            pass
         # cmd_echo(chat_id, text, reply_to=msg_id)
         return
 
     def button_start(self, chat_id):
-        u"""cmd_start: 봇을 활성화하고, 활성화 메시지 발송
+        u"""봇을 활성화하고, 활성화 메시지 발송
         chat_id: (integer) 채팅 ID
         """
         # print("START BUTTON START")
@@ -92,7 +92,7 @@ class TelegramBot:
         self.bot.send_message(chat_id, MSG_START, keyboard=BUTTON_KEYBOARD)
 
     def button_stop(self, chat_id):
-        u"""cmd_stop: 봇을 비활성화하고, 비활성화 메시지 발송
+        u"""봇을 비활성화하고, 비활성화 메시지 발송
         chat_id: (integer) 채팅 ID
         """
         # print("START BUTTON STOP")
@@ -100,18 +100,19 @@ class TelegramBot:
         self.bot.send_message(chat_id, MSG_STOP, keyboard=None)
 
     def set_enabled(self, chat_id, enabled):
-        u"""set_enabled: 봇 활성화/비활성화 상태 변경
+        u"""봇 활성화/비활성화 상태 변경
         chat_id:    (integer) 봇을 활성화/비활성화할 채팅 ID
         enabled:    (boolean) 지정할 활성화/비활성화 상태
         """
-        telebot_enable_status = TelegramBotEnableStatus.objects.get_or_create(chat_id=str(chat_id), defaults={'enabled': enabled})
-        # telebot_enable_status.enabled = enabled
-        # telebot_enable_status.save()
+        telebot_enable_status, created = TelegramBotEnableStatus.objects.get_or_create(chat_id=chat_id, defaults={'enabled': enabled})
+        if not created:  # 이미 값이 존재 할 경우 업데이트
+            telebot_enable_status.enabled = enabled
+            telebot_enable_status.save()
 
     def get_enabled(self, chat_id):
-        u"""get_enabled: 봇 활성화/비활성화 상태 반환
+        u"""봇 활성화/비활성화 상태 반환
         return: (boolean)
         """
-        telebot_enable_status = TelegramBotEnableStatus.objects.get(chat_id=str(chat_id))
+        telebot_enable_status = TelegramBotEnableStatus.objects.get(chat_id=chat_id)
         if telebot_enable_status:
             return telebot_enable_status.enabled
