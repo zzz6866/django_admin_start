@@ -1,12 +1,14 @@
 import json
 
-from django.http import HttpResponseNotFound, JsonResponse
-from django.shortcuts import render
+from celery.utils.log import get_task_logger
+from django.http import HttpResponseNotFound, JsonResponse, HttpResponse
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
 from torrent_bot.telegram_bot import TelegramBot
+
+logger = get_task_logger(__name__)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -35,4 +37,7 @@ def index_html(request):
     # telegrambot.process_commands(u.message)
     #
     # return render(request, 'torrrent/index.html', {"updates": updates})
-    pass
+    logger.info('Test log INFO')
+    logger.warning('Test log WARNING')
+    logger.error('Test log ERROR')
+    return HttpResponse("asdasdasd")
