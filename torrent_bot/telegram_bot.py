@@ -1,23 +1,30 @@
+import json
+import logging
 from datetime import datetime, time
 
 import telegram
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 
 from torrent_bot.models import TorrentMovie, TelegramBotEnableStatus
+
+# logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
+# logger = logging.getLogger(__name__)
 
 TELEGRAM_TOKEN = '763953984:AAHZYhC_K5g8c11skZglFdohl6j9JX2t6Hs'
 
 # 봇이 응답할 명령어
 BUTTON_START = '/start'
 BUTTON_STOP = '/stop'
-sBUTTON_NEW_LIST_TORRNET = '/button_new_list_torrnet'
+BUTTON_HELP = '/help'
+BUTTON_NEW_LIST_TORRNET = '/button_new_list_torrnet'
 BUTTON_FIND_TORRNET = '/button_find_torrnet'
 
 # 봇 사용법 & 메시지
 USAGE = u"""[사용법] 아래 명령어를 메시지로 보내거나 버튼을 누르시면 됩니다.
         /start - (봇 활성화)
         /stop  - (봇 비활성화)
+        /help  - (도움말)
         /button_new_list_torrnet  - (신규 토렌트 영화 목록)
         /button_find_torrnet  - (토렌트 검색 - 준비중)
         """
@@ -40,8 +47,8 @@ class TelegramBot:
         # today = datetime.now().date()
         # today = datetime.combine(today, time())
         torrent_movie_list = TorrentMovie.objects.filter(date__gte=datetime.now().date())
-        print(torrent_movie_list.query)
-        msg = "신규 등로된 영화 목록\n"
+        # print(torrent_movie_list.query)  # 쿼리 로그 출력
+        msg = "오늘 신규 등록된 영화 목록\n"
 
         for (i, entry) in enumerate(torrent_movie_list):
             msg += str(i + 1) + '. ' + entry.torrent_movie_name + "\n"
@@ -60,7 +67,7 @@ class TelegramBot:
         self.msg_id = msg['message_id']
         self.chat_id = msg['chat']['id']
         self.text = msg['text']
-        # print(self.msg_id, self.text)
+        # logging.info(self.msg_id)
         if not self.text:
             return
         elif BUTTON_START == self.text:
@@ -71,12 +78,12 @@ class TelegramBot:
         elif BUTTON_STOP == self.text:
             self.button_stop(self.chat_id)
             return
-        # elif CMD_HELP == text:
-        #     cmd_help(chat_id)
-        #     return
+        elif BUTTON_HELP == self.text:
+            self.button_help(self.chat_id)
+            return
         else:
-            pass
-        # cmd_echo(chat_id, text, reply_to=msg_id)
+            self.bot.send_message(chat_id=self.chat_id, text=USAGE + "\n!!명령어를 확인하세요!!")
+            # cmd_echo(chat_id, text, reply_to=msg_id)
         return
 
     def button_start(self, chat_id):
@@ -86,10 +93,18 @@ class TelegramBot:
         # print("START BUTTON START")
         BUTTON_KEYBOARD = [
             [BUTTON_START],
-            [BUTTON_STOP]
+            [BUTTON_STOP],
+            [BUTTON_HELP],
         ]
+        reply_markup = json.dumps({
+            'keyboard': BUTTON_KEYBOARD,
+            'resize_keyboard': True,
+            'one_time_keyboard': False,
+            # 'selective': (reply_to != None),
+        })
+
         self.set_enabled(chat_id, True)
-        self.bot.send_message(chat_id, MSG_START, keyboard=BUTTON_KEYBOARD)
+        self.bot.send_message(chat_id, MSG_START, reply_markup=reply_markup)
 
     def button_stop(self, chat_id):
         u"""봇을 비활성화하고, 비활성화 메시지 발송
@@ -97,7 +112,7 @@ class TelegramBot:
         """
         # print("START BUTTON STOP")
         self.set_enabled(chat_id, False)
-        self.bot.send_message(chat_id, MSG_STOP, keyboard=None)
+        self.bot.send_message(chat_id, MSG_STOP)
 
     def set_enabled(self, chat_id, enabled):
         u"""봇 활성화/비활성화 상태 변경
@@ -116,3 +131,6 @@ class TelegramBot:
         telebot_enable_status = TelegramBotEnableStatus.objects.get(chat_id=chat_id)
         if telebot_enable_status:
             return telebot_enable_status.enabled
+
+    def button_help(self, chat_id):
+        self.bot.send_message(chat_id=chat_id, text=USAGE)
