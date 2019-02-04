@@ -48,7 +48,7 @@ class PublicTicker(models.Model):
                     sell_price=json['sell_price'],
                     day_fluctate=json['24H_fluctate'],
                     day_fluctate_rate=json['24H_fluctate_rate'],
-                    date=timestamp,
+                    date=date,
                     )
         model.save()
 

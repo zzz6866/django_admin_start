@@ -102,3 +102,85 @@ USE_TZ = False
 # STATIC_URL = '/static/'
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+
+# SECURE_SSL_REDIRECT = True
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'formatters': {
+#         'standard': {
+#             'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+#         },
+#     },
+#     'handlers': {
+#         'console1': {
+#             'level': 'DEBUG',
+#             'class': 'logging.StreamHandler',
+#             'formatter': 'standard',
+#         },
+#         'console2': {
+#             'level': 'DEBUG',
+#             'class': 'logging.handlers.RotatingFileHandler',
+#             'filename': 'logs/django_request.log',
+#             'maxBytes': 1024 * 1024 * 5,  # 5 MB
+#             'backupCount': 5,
+#             'formatter': 'standard',
+#         },
+#     },
+#     # First config for root logger: console1 -> fmt1
+#     'root': {
+#         'handlers': ['console1'],
+#         'level': 'DEBUG',
+#         'propagate': True,
+#     },
+#     'loggers': {
+#         # Second config for root logger: console2 -> fmt2
+#         '': {
+#             'handlers': ['console2'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#     },
+# }
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d: %(message)s',
+        },
+        'simple': {
+            'format': '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'INFO',
+            'formatter': 'verbose',
+            'filters': [],
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'level': 'ERROR',
+            'filename': 'logs/debug.log',
+            'formatter': 'simple',
+        },
+    },
+    'loggers': {
+        '': {
+            'level': 'INFO',
+            'propagate': True,
+            'handlers': ['console', 'file'],
+            'filters': [],
+        },
+        'django.request': {
+            'level': 'DEBUG',
+            'propagate': False,
+            'handlers': ['console'],
+        },
+    },
+}
