@@ -1,10 +1,16 @@
 from __future__ import absolute_import, unicode_literals
 import os
+
 from celery import Celery
 
 # set the default Django settings module for the 'celery' program.
 
-# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'coin_bot.settings.production') # 환경 변수에 선언하여 사용하기 때문에 주석 처리
+# os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'alldev.settings.production') # 환경 변수에 선언하여 사용하기 때문에 주석 처리
+from celery.utils.log import get_task_logger
+from django.utils.datetime_safe import datetime
+
+logger = get_task_logger(__name__)
+
 os.environ.setdefault('FORKED_BY_MULTIPROCESSING', '1')  # TODO: ValueError: not enough values to unpack (expected 3, got 0) <= 에러 발생으로 인한 추가
 app = Celery('alldev')
 
@@ -16,7 +22,10 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 # app.autodiscover_tasks(lambda: INSTALLED_APPS)
 
 # Load task modules from all registered Django app configs.
+# tasks.py 파일에 정의한 스케쥴에 대해 자동으로 목록화 한다. __init__.py 와 같이 사용 한다. 참고 - http://docs.celeryproject.org/en/latest/django/first-steps-with-django.html
 app.autodiscover_tasks()
+# UTC FALSE 환경 설정시 시간차이가 발생하여 지정된 시간에 실행되지 않고 무한 반복 실행됨으로 인한 추가 설정
+app.now = datetime.now
 
 
 @app.task(bind=True)

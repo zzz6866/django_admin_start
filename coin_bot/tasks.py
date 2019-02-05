@@ -1,6 +1,5 @@
 from __future__ import absolute_import, unicode_literals
 
-import talib
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
@@ -50,11 +49,4 @@ def get_public_ticker(api_key, api_secret):
 @shared_task
 def send_notifiction():
     print("START")
-    # Another trick
-
-
-@shared_task
-def expected_indicator():
-    print("expected_indicator START !!")
-    print(talib.get_functions())
     # Another trick

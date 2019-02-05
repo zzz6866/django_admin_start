@@ -18,3 +18,9 @@ def find_new_torrent_movie():
     # 텔레그램을 통한 수집된 토렌트에 대한 메시지 밣송
     bot = TelegramBot()
     bot.send_message_new_list()
+
+
+@shared_task
+def torrent_test_print(msg):
+    logger.info(msg)
+    # print(msg)
