@@ -13,12 +13,15 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
 from django.http import HttpResponseRedirect
+from django.views.static import serve
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
+    url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),  # admin css 등 DEBUG = False 설정시 못가져오는 파일들 셋팅
     url(r'^$', lambda r: HttpResponseRedirect('admin/')),
     url(r'^admin/', admin.site.urls),
     url(r'^coin/', include('coin_bot.urls')),

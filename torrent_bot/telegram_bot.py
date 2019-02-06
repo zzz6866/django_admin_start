@@ -1,12 +1,12 @@
 import json
-import logging
-from datetime import datetime, time
+from datetime import datetime
 
 import telegram
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+from celery.utils.log import get_task_logger
 
 from torrent_bot.models import TorrentMovie, TelegramBotEnableStatus
+
+logger = get_task_logger(__name__)
 
 # logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG)
 # logger = logging.getLogger(__name__)
@@ -47,16 +47,17 @@ class TelegramBot:
         # today = datetime.now().date()
         # today = datetime.combine(today, time())
         torrent_movie_list = TorrentMovie.objects.filter(date__gte=datetime.now().date())
-        # print(torrent_movie_list.query)  # 쿼리 로그 출력
+        logger.info(torrent_movie_list.query)  # 쿼리 로그 출력
         msg = "오늘 신규 등록된 영화 목록\n"
 
-        for (i, entry) in enumerate(torrent_movie_list):
-            msg += str(i + 1) + '. ' + entry.torrent_movie_name + "\n"
-        # print(msg)
-        # self.bot.send_message(chat_id="214363528", text=msg)  # TEST
-        telebot_send_list = TelegramBotEnableStatus.objects.filter(enabled=True)
-        for entry in telebot_send_list:
-            self.bot.send_message(chat_id=entry.chat_id, text=msg)
+        if len(torrent_movie_list) > 0:
+            for (i, entry) in enumerate(torrent_movie_list):
+                msg += str(i + 1) + '. ' + entry.torrent_movie_name + "\n"
+            # print(msg)
+            # self.bot.send_message(chat_id="214363528", text=msg)  # TEST
+            telebot_send_list = TelegramBotEnableStatus.objects.filter(enabled=True)
+            for entry in telebot_send_list:
+                self.bot.send_message(chat_id=entry.chat_id, text=msg)
 
     def process_commands(self, msg):
 
