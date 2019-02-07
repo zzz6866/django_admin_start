@@ -66,7 +66,7 @@ class TelegramBot:
             # self.bot.send_message(chat_id="214363528", text=msg)  # TEST (admin)
             telebot_send_list = TelegramBotEnableStatus.objects.filter(enabled=True)
             for entry in telebot_send_list:
-                self.bot.send_message(chat_id=entry.chat_id, text=msg, parse_mode='html')
+                self.bot.send_message(chat_id=entry.chat_id, text=msg, parse_mode='HTML')
 
     def process_commands(self, msg):
 
