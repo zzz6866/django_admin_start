@@ -3,6 +3,7 @@
 # set DJANGO_SETTINGS_MODULE=alldev.settings.production # Windows shell
 export DJANGO_SETTINGS_MODULE=alldev.settings.production # Unix Bash shell
 
-celery -A alldev worker -B -l INFO &
+# celery -A alldev worker -B -l INFO  # 로컬 개발 환경 실행
+service celeryd restart # 데몬 실행
 #celery -A alldev beat -l INFO --scheduler django_celery_beat.schedulers:DatabaseScheduler & # worker -B 옵션으로 실행하지 않아도 DB 스케쥴 사용
 python manage.py runserver 0.0.0.0:8000 &

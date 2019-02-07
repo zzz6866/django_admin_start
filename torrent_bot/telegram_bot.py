@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 
 import telegram
+from bs4 import BeautifulSoup
 from celery.utils.log import get_task_logger
 
 from torrent_bot.models import TorrentMovie, TelegramBotEnableStatus
@@ -51,13 +52,21 @@ class TelegramBot:
         msg = "오늘 신규 등록된 영화 목록\n"
 
         if len(torrent_movie_list) > 0:
+
             for (i, entry) in enumerate(torrent_movie_list):
-                msg += str(i + 1) + '. ' + entry.torrent_movie_name + "\n"
-            # print(msg)
-            # self.bot.send_message(chat_id="214363528", text=msg)  # TEST
+                # html 유형의 메시지 생성 (텍스트에 링크 추가)
+                links = BeautifulSoup(features='html.parser')
+                a_tag = links.new_tag('a', href=entry.torrent_detail_url)
+                a_tag.string = entry.torrent_movie_name
+                links.append(a_tag)
+                links.append(links.new_tag('br'))
+                print(links.new_tag('br'))
+                msg += str(i + 1) + '. ' + str(links)
+            print(msg)
+            # self.bot.send_message(chat_id="214363528", text=msg)  # TEST (admin)
             telebot_send_list = TelegramBotEnableStatus.objects.filter(enabled=True)
             for entry in telebot_send_list:
-                self.bot.send_message(chat_id=entry.chat_id, text=msg)
+                self.bot.send_message(chat_id=entry.chat_id, text=msg, parse_mode='html')
 
     def process_commands(self, msg):
 
