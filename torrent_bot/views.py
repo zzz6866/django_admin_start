@@ -2,6 +2,7 @@ import json
 
 from celery.utils.log import get_task_logger
 from django.http import HttpResponseNotFound, JsonResponse, HttpResponse
+from django.http.response import HttpResponseBase
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -45,3 +46,11 @@ def index_html(request):
     bot = TelegramBot()
     bot.send_message_new_list()
     return HttpResponse("asdasdasd")
+
+
+class SetWebhookHandler(View):
+    def get(self, request, *args, **kwargs):
+        webhook_url = request.build_absolute_uri('/torrent/webhook/')
+        bot = TelegramBot()
+        res_json = bot.bot.set_webhook(url=webhook_url)
+        return JsonResponse(res_json)

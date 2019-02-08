@@ -10,8 +10,8 @@ from torrent_bot.models import TorrentMovie
 
 class SeleniumChrome:
     """
-        Selenim Chrome Init
-        크롬으로 파싱을 위한 초기화
+    Selenim Chrome Init
+    크롬으로 파싱을 위한 초기화
     """
     options = webdriver.ChromeOptions()  # chromedriver option 설정
 
