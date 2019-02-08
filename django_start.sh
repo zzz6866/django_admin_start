@@ -7,8 +7,10 @@
 # django running
 if [[ *"local"* == "$DJANGO_SETTINGS_MODULE" ]]; then
     nohup celery -A alldev worker -B -l INFO &
-    python manage.py runserver 0.0.0.0:8000
+    python manage.py runserver 0.0.0.0:8000 &
+    curl -X GET https://local.alldev.co.kr:8443/torrent/webhook/
 else
     nohup python manage.py runserver 0.0.0.0:8000 &
     service celeryd restart # 데몬 실행
+    curl -X GET https://www.alldev.co.kr:8443/torrent/webhook/
 fi
