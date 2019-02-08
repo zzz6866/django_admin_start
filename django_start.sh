@@ -4,11 +4,11 @@
 # export DJANGO_SETTINGS_MODULE=alldev.settings.production # Unix Bash shell
 
 # celery -A alldev worker -B -l INFO  # 로컬 개발 환경 실행
-service celeryd restart # 데몬 실행
 # django running
-nohup python manage.py runserver 0.0.0.0:8000 &
 if [[ *"local"* == "$DJANGO_SETTINGS_MODULE" ]]; then
-    echo "1"
+    nohup celery -A alldev worker -B -l INFO &
+    python manage.py runserver 0.0.0.0:8000
 else
-    echo "0"
+    nohup python manage.py runserver 0.0.0.0:8000 &
+    service celeryd restart # 데몬 실행
 fi
