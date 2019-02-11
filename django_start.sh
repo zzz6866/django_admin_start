@@ -6,11 +6,15 @@
 # celery -A alldev worker -B -l INFO  # 로컬 개발 환경 실행
 # django running
 if [[ *"local"* == "$DJANGO_SETTINGS_MODULE" ]]; then
+    python manage.py runserver 0.0.0.0:8000 & # django run
+    # brew  # redis start
     nohup celery -A alldev worker -B -l INFO &
-    python manage.py runserver 0.0.0.0:8000 &
+    sleep 10
     curl -X GET https://local.alldev.co.kr:8443/torrent/webhook/
 else
-    nohup python manage.py runserver 0.0.0.0:8000 &
+    nohup python manage.py runserver 0.0.0.0:8000 & # django run
+    /etc/init.d/redis-server restart # redis start
     service celeryd restart # 데몬 실행
+    sleep 10
     curl -X GET https://www.alldev.co.kr:8443/torrent/webhook/
 fi
