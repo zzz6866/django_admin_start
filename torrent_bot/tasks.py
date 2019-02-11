@@ -13,7 +13,7 @@ logger = get_task_logger(__name__)
 def find_new_torrent_movie():
     # Selenum을 통한 토렌트 수집
     selenium_chrome = SeleniumChrome()
-    task_id = selenium_chrome.find_new_torrent_movie()
+    task_id = selenium_chrome.get_new_torrent_movie()
 
     # 텔레그램을 통한 수집된 토렌트에 대한 메시지 밣송
     bot = TelegramBot()

@@ -10,6 +10,7 @@ class TorrentMovie(models.Model):
     torrent_detail_url = models.CharField(max_length=500)
     task_id = models.CharField(max_length=100, null=True)
     date = models.DateTimeField(auto_now=True)
+    download_YN = models.BooleanField(default=False)
 
 
 # 사용자별 봇 활성화 상태

@@ -2,7 +2,6 @@ import json
 
 from celery.utils.log import get_task_logger
 from django.http import HttpResponseNotFound, JsonResponse, HttpResponse
-from django.http.response import HttpResponseBase
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -21,7 +20,12 @@ class WebhookHandler(View):
         json_body = json.loads(request.body.decode("utf-8"))
         # print(json_body)
         telegrambot = TelegramBot()
-        telegrambot.process_commands(json_body['message'])
+        if "message" in json_body:
+            telegrambot.process_commands(json_body['message'])
+        elif "callback_query" in json_body:
+            print('callback_query!!!!!')
+        else:
+            print('NOT THING!!!!')
         return JsonResponse(json_body)
 
 
@@ -43,8 +47,10 @@ def index_html(request):
     # logger.error('Test log ERROR')
 
     # 텔레그램을 통한 수집된 토렌트에 대한 메시지 밣송
-    bot = TelegramBot()
-    bot.send_message_new_list()
+    # bot = TelegramBot()
+    # bot.send_message_new_list()
+    # bot.bot.get_webhook_info()
+
     return HttpResponse("asdasdasd")
 
 

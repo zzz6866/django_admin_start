@@ -2,10 +2,16 @@ import platform
 
 from bs4 import BeautifulSoup
 from celery import current_task
+from celery.utils.log import get_task_logger
 from selenium import webdriver
 
 from alldev.settings.base import BASE_DIR
 from torrent_bot.models import TorrentMovie
+
+logger = get_task_logger(__name__)
+
+BASE_URL = 'https://torrentwal.com'
+TR_BOARD_LIST = 'div#main_body, div#blist > table.board_list > tbody > tr'
 
 
 class SeleniumChrome:
@@ -44,28 +50,13 @@ class SeleniumChrome:
 
         self.driver = webdriver.Chrome(chromedriver_path, chrome_options=self.options)
 
-    def find_new_torrent_movie(self):
-        print('START SEARCH NEW MOVIE!!!')
+    def get_new_torrent_movie(self):
+        """
+        일일 신규 토렌트 조회 배치
+        :return: task_id : celery task id
+        """
+        logger.info('START SEARCH NEW MOVIE!!!')
         task_id = current_task.request.id
-        base_url = 'https://torrentwal.com'
-        # res_list = requests.get(base_url + '/torrent_movie/torrent1.htm')
-        # res_list.encoding = 'utf-8'
-        # html = res_list.text
-        # soup = BeautifulSoup(html, 'html.parser')
-        # newest_table = soup.select('div#main_body > table.board_list > tr')
-        # # print(newest_table[0])
-        # for tr in newest_table:
-        #     strong_today = tr.find('td', attrs={'class': 'datetime'}).find('strong', recursive=False)
-        #     if strong_today:
-        #         a_href = tr.find('td', attrs={'class': 'subject'}).find('a', recursive=False)['href']
-        #         res_detail = requests.get(base_url + a_href.replace('..', ''))
-        #         res_detail.encoding = 'utf-8'
-        #         html = res_detail.text
-        #         # print(html)
-        #         soup = BeautifulSoup(html, 'html.parser')
-        #         # table_file = soup.select('table#file_table')
-        #         table_file = soup.find_all('table', attrs={'id': 'file_table'})
-        #         print(table_file)
 
         # Chrome의 경우 아까 받은 chromedriver의 위치를 지정해준다.
         chromedriver = self.driver
@@ -74,17 +65,17 @@ class SeleniumChrome:
         # PhantomJS의 경우 아까 받은 PhantomJS의 위치를 지정해준다.
         # driver = webdriver.PhantomJS(executable_path=BASE_DIR + r'/selenium/phantomjs-2.1.1-linux-x86_64/bin/phantomjs')
 
-        chromedriver.get(base_url + "/torrent_movie/torrent1.htm")
+        chromedriver.get(BASE_URL + "/torrent_movie/torrent1.htm")
         html_list = chromedriver.page_source
         # print(html)
         soup = BeautifulSoup(html_list, 'html.parser')
-        newest_table = soup.select('div#main_body > table.board_list > tbody > tr')  #
-        # print(newest_table)
-        for tr in newest_table:
+        tr_board_list = soup.select(TR_BOARD_LIST)  #
+        # print(tr_board_list)
+        for tr in tr_board_list:
             strong_today = tr.find('td', attrs={'class': 'datetime'}).find('strong', recursive=False)
             if strong_today:
                 a_href = tr.find('td', attrs={'class': 'subject'}).find('a', recursive=False)
-                detail_url = base_url + a_href['href'].replace('..', '')
+                detail_url = BASE_URL + a_href['href'].replace('..', '')
                 # 토렌트 idx 추출
                 torrent_idx = a_href['href'].split('/')[-1].replace('.html', '')
                 # 값이 존재 하면 조회, 없으면 생성
@@ -96,6 +87,7 @@ class SeleniumChrome:
                     torrent_movie.torrent_detail_url = detail_url
                     torrent_movie.save()
 
+                # 상세 화면에서 torrent or magnet url을 뽑아 다운로드 목록에 추가하는 로직 (미구현)
                 # print(torrent_idx)
                 # chromedriver.get(detail_url)
                 # html_detail = chromedriver.page_source
@@ -115,3 +107,26 @@ class SeleniumChrome:
         # Chrome Driver Close
         chromedriver.close()
         return task_id
+
+    def get_find_torrent(self, find_text):
+        """
+        토렌트 검색 조회
+        :return:
+        """
+        logger.info('START FIND NEW TORRENT!!!')
+
+        chromedriver = self.driver
+        chromedriver.get(BASE_URL + '/bbs/s-1-' + find_text)
+        # print(chromedriver.current_url)
+        html_list = chromedriver.page_source
+        # print(html)
+        soup = BeautifulSoup(html_list, 'html.parser')
+        tr_board_list = soup.select(TR_BOARD_LIST)  #
+        # print(tr_board_list)
+        res_list = []
+        for (i, entry) in enumerate(tr_board_list):
+            a_href = entry.find('td', attrs={'class': 'subject'}).find_all('a', recursive=False)[1]  # 제목
+            detail_url = BASE_URL + a_href['href'].replace('..', '')  # 상세 화면 url
+            dic = {"torrent_title": a_href.string, "torrent_detail_url": detail_url}
+            res_list.append(dic)
+        return res_list

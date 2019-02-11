@@ -4,9 +4,10 @@ from datetime import datetime
 import telegram
 from bs4 import BeautifulSoup
 from celery.utils.log import get_task_logger
-from telegram import ParseMode
+from telegram import ParseMode, ForceReply, InlineKeyboardMarkup, InlineKeyboardButton
 
 from torrent_bot.models import TorrentMovie, TelegramBotEnableStatus
+from torrent_bot.selenium_chrome import SeleniumChrome
 
 logger = get_task_logger(__name__)
 
@@ -19,11 +20,12 @@ TELEGRAM_TOKEN = '763953984:AAHZYhC_K5g8c11skZglFdohl6j9JX2t6Hs'
 BUTTON_START = '/start'
 BUTTON_STOP = '/stop'
 BUTTON_HELP = '/help'
-BUTTON_NEW_LIST_TORRNET = '/button_new_list_torrnet'
-BUTTON_FIND_TORRNET = '/button_find_torrnet'
+BUTTON_NEW_LIST_TORRNET = '/new_list_torrent'
+BUTTON_FIND_TORRNET = '/find_torrent'
+BUTTON_FIND_TORRNET2 = '/find_torrent2'
 
 # 봇 사용법 & 메시지
-USAGE = u"""[사용법] 아래 명령어를 메시지로 보내거나 버튼을 누르시면 됩니다.
+USAGE_HELP = u"""[사용법] 아래 명령어를 메시지로 보내거나 버튼을 누르시면 됩니다.
         /start - (봇 활성화)
         /stop  - (봇 비활성화)
         /help  - (도움말)
@@ -32,6 +34,7 @@ USAGE = u"""[사용법] 아래 명령어를 메시지로 보내거나 버튼을 
         """
 MSG_START = u'봇 시작.'
 MSG_STOP = u'봇 정지.'
+MSG_FIND_TEXT = u'검색어를 입력하세요.'
 
 
 class TelegramBot:
@@ -50,7 +53,7 @@ class TelegramBot:
         # today = datetime.combine(today, time())
         torrent_movie_list = TorrentMovie.objects.filter(date__gte=datetime.now().date())
         logger.info(torrent_movie_list.query)  # 쿼리 로그 출력
-        msg = "오늘 신규 등록된 영화 목록\n"
+        msg = "🎬오늘 신규 등록된 영화 목록🎬\n"
 
         if len(torrent_movie_list) > 0:
             for (i, entry) in enumerate(torrent_movie_list):
@@ -78,25 +81,41 @@ class TelegramBot:
         self.chat_id = msg['chat']['id']
         self.text = msg['text']
         # logging.info(self.msg_id)
+        # print(json.dumps(msg))
         if not self.text:
             return
         elif BUTTON_START == self.text:
-            self.button_start(self.chat_id)
+            self.cmd_start()
             return
-        elif not self.get_enabled(self.chat_id):
+        elif not self.get_enabled():
             return
         elif BUTTON_STOP == self.text:
-            self.button_stop(self.chat_id)
+            self.cmd_stop()
             return
         elif BUTTON_HELP == self.text:
-            self.button_help(self.chat_id)
+            self.cmd_help()
+            return
+        elif BUTTON_FIND_TORRNET == self.text:
+            # self.cmd_find_torrent(msg['text'])
+            # Update Feature with Inline Keyboard
+            # promo_keyboard = InlineKeyboardButton(text="Update!", callback_data="update_taxi")
+            # custom_keyboard = [[promo_keyboard]]
+            # reply_markup = InlineKeyboardMarkup(custom_keyboard)
+            # self.bot.send_message(chat_id=self.chat_id, text="input find torrent text1122", reply_markup=reply_markup)
+            self.bot.send_message(chat_id=self.chat_id, text=MSG_FIND_TEXT, reply_markup=ForceReply(force_reply=True, selective=False))
+            # reply_keyboard = [[telegram.KeyboardButton(text='/1')], [telegram.KeyboardButton(text='/2')]]
+            # self.bot.send_message(chat_id=self.chat_id, text="input find torrent text", reply_markup=telegram.ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True))
+            return
+            # 토렌트 검색시
+        elif MSG_FIND_TEXT in str(msg):
+            self.cmd_find_torrent(msg['text'])
             return
         else:
-            self.bot.send_message(chat_id=self.chat_id, text=USAGE + "\n!!명령어를 확인하세요!!")
+            self.bot.send_message(chat_id=self.chat_id, text=USAGE_HELP + "\n!!명령어를 확인하세요!!")
             # cmd_echo(chat_id, text, reply_to=msg_id)
         return
 
-    def button_start(self, chat_id):
+    def cmd_start(self):
         u"""봇을 활성화하고, 활성화 메시지 발송
         chat_id: (integer) 채팅 ID
         """
@@ -107,40 +126,64 @@ class TelegramBot:
             [BUTTON_HELP],
         ]
         reply_markup = json.dumps({
-            'keyboard': BUTTON_KEYBOARD,
-            'resize_keyboard': True,
-            'one_time_keyboard': False,
+            # 'keyboard': BUTTON_KEYBOARD,
+            # 'resize_keyboard': True,
+            # 'one_time_keyboard': False,
             # 'selective': (reply_to != None),
         })
 
-        self.set_enabled(chat_id, True)
-        self.bot.send_message(chat_id, MSG_START, reply_markup=reply_markup)
+        self.set_enabled(True)
+        self.bot.send_message(self.chat_id, MSG_START)
 
-    def button_stop(self, chat_id):
+    def cmd_stop(self):
         u"""봇을 비활성화하고, 비활성화 메시지 발송
         chat_id: (integer) 채팅 ID
         """
         # print("START BUTTON STOP")
-        self.set_enabled(chat_id, False)
-        self.bot.send_message(chat_id, MSG_STOP)
+        self.set_enabled(False)
+        self.bot.send_message(self.chat_id, MSG_STOP)
 
-    def set_enabled(self, chat_id, enabled):
+    def set_enabled(self, enabled):
         u"""봇 활성화/비활성화 상태 변경
         chat_id:    (integer) 봇을 활성화/비활성화할 채팅 ID
         enabled:    (boolean) 지정할 활성화/비활성화 상태
         """
-        telebot_enable_status, created = TelegramBotEnableStatus.objects.get_or_create(chat_id=chat_id, defaults={'enabled': enabled})
+        telebot_enable_status, created = TelegramBotEnableStatus.objects.get_or_create(chat_id=self.chat_id, defaults={'enabled': enabled})
         if not created:  # 이미 값이 존재 할 경우 업데이트
             telebot_enable_status.enabled = enabled
             telebot_enable_status.save()
 
-    def get_enabled(self, chat_id):
+    def get_enabled(self):
         u"""봇 활성화/비활성화 상태 반환
         return: (boolean)
         """
-        telebot_enable_status = TelegramBotEnableStatus.objects.get(chat_id=chat_id)
+        telebot_enable_status = TelegramBotEnableStatus.objects.get(chat_id=self.chat_id)
         if telebot_enable_status:
             return telebot_enable_status.enabled
 
-    def button_help(self, chat_id):
-        self.bot.send_message(chat_id=chat_id, text=USAGE)
+    def cmd_help(self):
+        """
+        도움말
+        :return:
+        """
+        self.bot.send_message(chat_id=self.chat_id, text=USAGE_HELP)
+
+    def cmd_find_torrent(self, find_text):
+        """
+        토렌트 검색
+        :param find_text: 검색어
+        :return:
+        """
+        res_list = SeleniumChrome().get_find_torrent(find_text=find_text)
+        # self.bot.send_message(chat_id=self.chat_id, text=msg, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+        inline_keyboard_list = []
+        for i in res_list:
+            keyboard = [InlineKeyboardButton(text=i['torrent_title'], callback_data=i['torrent_detail_url'])]
+            inline_keyboard_list.append(keyboard)
+        reply_markup = InlineKeyboardMarkup(inline_keyboard_list)
+        if len(inline_keyboard_list) > 0:
+            msg = "검색 결과 목록 입니다."
+        else:
+            msg = "검색된 결과가 없습니다. 다시 시도하시려면 " + BUTTON_FIND_TORRNET + " 명령어를 입력하세요."
+
+        self.bot.send_message(chat_id=self.chat_id, text=msg, reply_markup=reply_markup)
