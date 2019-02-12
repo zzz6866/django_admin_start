@@ -6,6 +6,7 @@ from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 
+from torrent_bot import tasks
 from torrent_bot.telegram_bot import TelegramBot
 
 logger = get_task_logger(__name__)
@@ -32,7 +33,7 @@ class WebhookHandler(View):
 def index_html(request):
     # bot = TelegramBot()
     # bot.send_message_new_list()
-    # tasks.find_new_torrent_movie()
+    tasks.find_new_torrent_movie()
 
     # telegrambot = TelegramBot()
     # telegrambot.bot.delete_webhook()

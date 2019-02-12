@@ -48,28 +48,20 @@ class TelegramBot:
         self.chat_id = None
         self.text = None
 
-    def send_message_new_list(self):
+    def send_message_new_list(self, res_list):
         # today = datetime.now().date()
         # today = datetime.combine(today, time())
-        torrent_movie_list = TorrentMovie.objects.filter(date__gte=datetime.now().date())
-        logger.info(torrent_movie_list.query)  # 쿼리 로그 출력
-        msg = "🎬오늘 신규 등록된 영화 목록🎬\n"
+        # torrent_movie_list = TorrentMovie.objects.filter(date__gte=datetime.now().date())
+        # print(torrent_movie_list.query)  # 쿼리 로그 출력
+        msg = "🎬오늘 신규 등록된 영화 목록🎬"
 
-        if len(torrent_movie_list) > 0:
-            for (i, entry) in enumerate(torrent_movie_list):
-                # html 유형의 메시지 생성 (텍스트에 링크 추가)
-                links = BeautifulSoup(features='html.parser')
-                a_tag = links.new_tag('a', href=entry.torrent_detail_url)
-                a_tag.string = entry.torrent_movie_name
-                # links.append(a_tag)
-                # links.append(links.new_tag('br'))
-                # logger.info(links.new_tag('br'))
-                msg += str(i + 1) + '. ' + str(a_tag) + '\n'
-            # logger.info(msg)
-            # self.bot.send_message(chat_id="214363528", text=msg)  # TEST (admin)
+        inline_keyboard_list, reply_markup = self.get_inline_keyboard_list(res_list)
+
+        # self.bot.send_message(chat_id="214363528", text=msg)  # TEST (admin)
+        if len(inline_keyboard_list) > 0:
             telebot_send_list = TelegramBotEnableStatus.objects.filter(enabled=True)
             for entry in telebot_send_list:
-                self.bot.send_message(chat_id=entry.chat_id, text=msg, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+                self.bot.send_message(chat_id=entry.chat_id, text=msg, parse_mode=ParseMode.HTML, disable_web_page_preview=True, reply_markup=reply_markup)
 
     def process_commands(self, msg):
 
@@ -120,17 +112,17 @@ class TelegramBot:
         chat_id: (integer) 채팅 ID
         """
         # print("START BUTTON START")
-        BUTTON_KEYBOARD = [
-            [BUTTON_START],
-            [BUTTON_STOP],
-            [BUTTON_HELP],
-        ]
-        reply_markup = json.dumps({
-            # 'keyboard': BUTTON_KEYBOARD,
-            # 'resize_keyboard': True,
-            # 'one_time_keyboard': False,
-            # 'selective': (reply_to != None),
-        })
+        # BUTTON_KEYBOARD = [
+        #     [BUTTON_START],
+        #     [BUTTON_STOP],
+        #     [BUTTON_HELP],
+        # ]
+        # reply_markup = json.dumps({
+        #     'keyboard': BUTTON_KEYBOARD,
+        #     'resize_keyboard': True,
+        #     'one_time_keyboard': False,
+        #     'selective': (reply_to != None),
+        # })
 
         self.set_enabled(True)
         self.bot.send_message(self.chat_id, MSG_START)
@@ -174,16 +166,22 @@ class TelegramBot:
         :param find_text: 검색어
         :return:
         """
+        self.bot.send_message(chat_id=self.chat_id, text="검색중입니다...")
         res_list = SeleniumChrome().get_find_torrent(find_text=find_text)
         # self.bot.send_message(chat_id=self.chat_id, text=msg, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-        inline_keyboard_list = []
-        for i in res_list:
-            keyboard = [InlineKeyboardButton(text=i['torrent_title'], callback_data=i['torrent_detail_url'])]
-            inline_keyboard_list.append(keyboard)
-        reply_markup = InlineKeyboardMarkup(inline_keyboard_list)
+        inline_keyboard_list, reply_markup = self.get_inline_keyboard_list(res_list)
         if len(inline_keyboard_list) > 0:
-            msg = "검색 결과 목록 입니다."
+            msg = "검색 결과입니다."
         else:
-            msg = "검색된 결과가 없습니다. 다시 시도하시려면 " + BUTTON_FIND_TORRNET + " 명령어를 입력하세요."
+            msg = "검색된 결과가 없습니다.\n다시 시도하시려면 " + BUTTON_FIND_TORRNET + " 명령어를 입력하세요."
 
         self.bot.send_message(chat_id=self.chat_id, text=msg, reply_markup=reply_markup)
+
+    def get_inline_keyboard_list(self, res_list):
+        inline_keyboard_list = []
+        if len(res_list) > 0:
+            for i in res_list:
+                keyboard = [InlineKeyboardButton(text=i['torrent_title'], callback_data=i['torrent_detail_url'])]
+                inline_keyboard_list.append(keyboard)
+        reply_markup = InlineKeyboardMarkup(inline_keyboard_list)
+        return inline_keyboard_list, reply_markup

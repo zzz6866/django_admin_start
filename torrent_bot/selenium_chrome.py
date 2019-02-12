@@ -11,7 +11,7 @@ from torrent_bot.models import TorrentMovie
 logger = get_task_logger(__name__)
 
 BASE_URL = 'https://torrentwal.com'
-TR_BOARD_LIST = 'div#main_body, div#blist > table.board_list > tbody > tr'
+TR_BOARD_LIST = 'div#blist > table.board_list > tbody > tr, div#main_body > table.board_list > tbody > tr'
 
 
 class SeleniumChrome:
@@ -71,21 +71,14 @@ class SeleniumChrome:
         soup = BeautifulSoup(html_list, 'html.parser')
         tr_board_list = soup.select(TR_BOARD_LIST)  #
         # print(tr_board_list)
+        res_list = []
         for tr in tr_board_list:
             strong_today = tr.find('td', attrs={'class': 'datetime'}).find('strong', recursive=False)
             if strong_today:
                 a_href = tr.find('td', attrs={'class': 'subject'}).find('a', recursive=False)
-                detail_url = BASE_URL + a_href['href'].replace('..', '')
-                # 토렌트 idx 추출
-                torrent_idx = a_href['href'].split('/')[-1].replace('.html', '')
-                # 값이 존재 하면 조회, 없으면 생성
-                torrent_movie, created = TorrentMovie.objects.get_or_create(
-                    torrent_id=torrent_idx,
-                    defaults={'torrent_movie_name': a_href.string, 'torrent_detail_url': detail_url, 'task_id': task_id})
-                if not created:  # 이미 값이 존재 할 경우 업데이트
-                    torrent_movie.torrent_movie_name = a_href.string
-                    torrent_movie.torrent_detail_url = detail_url
-                    torrent_movie.save()
+                detail_url = BASE_URL + a_href['href'].replace('..', '')  # 상세 화면 url
+                dic = {"torrent_title": a_href.string, "torrent_detail_url": detail_url}
+                res_list.append(dic)
 
                 # 상세 화면에서 torrent or magnet url을 뽑아 다운로드 목록에 추가하는 로직 (미구현)
                 # print(torrent_idx)
@@ -106,7 +99,7 @@ class SeleniumChrome:
                 #         chromedriver.find_element_by_css_selector('#file_table > tbody > tr:nth-child(' + str(i + 1) + ') > td > a').click()
         # Chrome Driver Close
         chromedriver.close()
-        return task_id
+        return res_list
 
     def get_find_torrent(self, find_text):
         """
