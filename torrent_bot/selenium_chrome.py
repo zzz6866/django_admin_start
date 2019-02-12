@@ -122,4 +122,6 @@ class SeleniumChrome:
             detail_url = BASE_URL + a_href['href'].replace('..', '')  # 상세 화면 url
             dic = {"torrent_title": a_href.string, "torrent_detail_url": detail_url}
             res_list.append(dic)
+
+        chromedriver.close()
         return res_list
