@@ -58,6 +58,7 @@ def index_html(request):
 class SetWebhookHandler(View):
     def get(self, request, *args, **kwargs):
         webhook_url = request.build_absolute_uri('/torrent/webhook/')
+        webhook_url= webhook_url.replace('http://', 'https://')
         bot = TelegramBot()
-        res_json = bot.bot.set_webhook(url=webhook_url)
-        return JsonResponse(res_json)
+        result = bot.bot.set_webhook(url=webhook_url)  # boolean
+        return HttpResponse(result)
