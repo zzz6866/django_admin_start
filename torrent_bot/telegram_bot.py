@@ -43,8 +43,6 @@ class TelegramBot:
         # 토큰 세팅
         self.bot = telegram.Bot(token=TELEGRAM_TOKEN)
         # 변수 선언
-        self.msg_id = None
-        self.msg_id = None
         self.chat_id = None
         self.text = None
 
@@ -69,7 +67,6 @@ class TelegramBot:
         chat_id: (integer) 채팅 ID
         text:    (string)  사용자가 보낸 메시지 내용
         """
-        self.msg_id = msg['message_id']
         self.chat_id = msg['chat']['id']
         self.text = msg['text']
         # logging.info(self.msg_id)
@@ -104,7 +101,6 @@ class TelegramBot:
             return
         else:
             self.bot.send_message(chat_id=self.chat_id, text=USAGE_HELP + "\n!!명령어를 확인하세요!!")
-            # cmd_echo(chat_id, text, reply_to=msg_id)
         return
 
     def cmd_start(self):

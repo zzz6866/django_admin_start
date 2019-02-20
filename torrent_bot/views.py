@@ -19,7 +19,7 @@ class WebhookHandler(View):
 
     def post(self, request, *args, **kwargs):
         json_body = json.loads(request.body.decode("utf-8"))
-        # print(json_body)
+        print(json_body)
         telegrambot = TelegramBot()
         if "message" in json_body:
             telegrambot.process_commands(json_body['message'])
