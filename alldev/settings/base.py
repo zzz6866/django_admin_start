@@ -2,7 +2,7 @@
 settings 공통
 """
 
-import os
+import os, os.path
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # default
@@ -145,6 +145,10 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 #         },
 #     },
 # }
+
+LOG_PATH = "/var/log/django/"  # 로그 생성 경로
+if not os.path.exists(LOG_PATH):  # 로그 디렉토리 없을시 생성
+    os.makedirs(LOG_PATH)
 
 LOGGING = {
     'version': 1,

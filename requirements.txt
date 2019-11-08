@@ -1,6 +1,6 @@
 amqp==2.4.0
 anyjson==0.3.3
-asn1crypto==0.24.0
+asn1crypto==1.2.0
 beautifulsoup4==4.7.1
 billiard==3.5.0.5
 celery==4.2.1

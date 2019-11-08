@@ -24,6 +24,6 @@ urlpatterns = [
     url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),  # admin css 등 DEBUG = False 설정시 못가져오는 파일들 셋팅
     url(r'^$', lambda r: HttpResponseRedirect('admin/')),
     url(r'^admin/', admin.site.urls),
-    url(r'^coin/', include('coin_bot.urls')),
+    # url(r'^coin/', include('coin_bot.urls')), # 미사용 주석처리
     url(r'^torrent/', include('torrent_bot.urls')),
 ]
