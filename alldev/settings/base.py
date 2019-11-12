@@ -146,7 +146,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 #     },
 # }
 
-LOG_PATH = "/var/log/django/"  # 로그 생성 경로
+LOG_PATH = os.path.join(BASE_DIR, "log/django")  # 로그 생성 경로
 if not os.path.exists(LOG_PATH):  # 로그 디렉토리 없을시 생성
     os.makedirs(LOG_PATH)
 
@@ -171,7 +171,7 @@ LOGGING = {
         'file': {
             'class': 'logging.FileHandler',
             'level': 'ERROR',
-            'filename': '/var/log/django/debug.log',
+            'filename': os.path.join(LOG_PATH, '/debug.log'),
             'formatter': 'simple',
         },
     },
