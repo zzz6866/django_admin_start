@@ -1,4 +1,4 @@
-from ctypes import c_char
+from ctypes import c_char, byref
 
 from django.test import TestCase
 
@@ -7,27 +7,32 @@ from zugbruecke import WINFUNCTYPE, cdll
 
 if __name__ == "__main__":
     import zugbruecke as ctypes
-    from zugbruecke import POINTER, WINFUNCTYPE, windll, WinError, c_char_p
-    from zugbruecke.wintypes import BOOL, HWND, RECT, INT, DWORD, CHAR, PCHAR, LPCWSTR, UINT, PDWORD
+    from zugbruecke import POINTER, WINFUNCTYPE, windll, WinError, c_char_p, cast
+    from zugbruecke.wintypes import BOOL, HWND, RECT, INT, DWORD, CHAR, PCHAR, LPCWSTR, UINT, PDWORD, LPSTR
+
+    hWnd = HWND(0)
+    msg = DWORD(0)
+    sz_id = c_char_p(b"aaaaa")
+    sz_pw = c_char_p(b"aaaaaa")
+    sz_cert_pw = c_char_p(b"aaaaaa")
 
     INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
 
-    wmca_dll = ctypes.windll.LoadLibrary('wmca.dll')
-    # wmca_dll = ctypes.WinDLL('wmca.dll')
+    # wmca_dll = ctypes.windll.LoadLibrary('wmca.dll')
+    wmca_dll = ctypes.WinDLL('wmca.dll')
     wmcaConnect = wmca_dll.wmcaConnect
-    # wmcaConnect.argtypes = WINFUNCTYPE(HWND, DWORD, CHAR, CHAR, PCHAR, PCHAR, PCHAR)
-    wmcaConnect.argtypes = [HWND, PDWORD, CHAR, CHAR, PCHAR, PCHAR, PCHAR]
+    wmcaConnect.argtypes = [POINTER(HWND), PDWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR]
     wmcaConnect.restype = BOOL
 
-    hWnd = HWND()
-    msg = DWORD(1)
-    sz_id = c_char_p(b"a")
-    sz_pw = c_char_p(b"a")
-    sz_cert_pw = c_char_p(b"a")
+    print(wmcaConnect(byref(hWnd), byref(msg), b'T', b'W', sz_id, sz_pw, sz_cert_pw))
+    print("pointer : ", hWnd.value, msg.value)
+    # print("wmcaDisconnect : ", wmca_dll.wmcaDisconnect())
 
-    print(wmca_dll.wmcaIsConnected())
-    print(wmcaConnect(hWnd, msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw))
-
+    # property_func = WINFUNCTYPE(HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR)
+    # result = property_func(wmcaConnect(byref(hWnd), byref(msg), b'T', b'W', sz_id, sz_pw, sz_cert_pw))
+    # print("result : ", result)
+    # print("pointer : ", hWnd.value, msg.value)
+    # del wmca_dll
     """prototype = WINFUNCTYPE(HWND, DWORD, CHAR, CHAR, PCHAR, PCHAR, PCHAR)
     paramflags = ((OUTPUT_PARAM, "hWnd", hWnd),
                   (OUTPUT_PARAM, "msg", msg),
