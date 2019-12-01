@@ -1,14 +1,16 @@
 import os
-
-from django.test import TestCase
 from sys import platform
 
-if any([platform.startswith(os_name) for os_name in ['linux', 'darwin', 'freebsd']]):
-    import zugbruecke as ctypes
-elif platform.startswith('win'):
-    import ctypes
+from alldev.settings.base import BASE_DIR
 
-    os.environ['PATH'] = ';'.join([os.environ['PATH'], "C:\\Users\\1327649.HIMARTINFRA\\PycharmProjects\\alldev\\flipper_helper\\bin"])
+if any([platform.startswith(os_name) for os_name in ['linux', 'darwin', 'freebsd']]):  # 리눅스용
+    import zugbruecke as ctypes
+    import zugbruecke.wintypes as wintypes
+elif platform.startswith('win'):  # 윈도우용
+    import ctypes
+    import ctypes.wintypes as wintypes
+
+    os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\flipper_helper\bin"])
 else:
     # Handle unsupported platforms
     print("NOT USEABLE")
@@ -228,65 +230,100 @@ const CA_WMCAEVENT  =WM_USER+8400;
 
 """
 
-if __name__ == "__main__":
-    from ctypes import POINTER, WINFUNCTYPE, windll, WinError, c_char_p, cast, byref, c_void_p, c_ulong, create_string_buffer
-    from ctypes.wintypes import BOOL, HWND, RECT, INT, DWORD, CHAR, PCHAR, LPCWSTR, UINT, PDWORD, LPSTR
+"""
+typedef struct  {
+	char	msg_cd		[5];	//00000:정상, 기타:비정상(해당 코드값을 이용하여 코딩하지 마세요. 코드값은 언제든지 변경될 수 있습니다.)
+	char	user_msg	[80];
+} MSGHEADER;
+"""
 
-    hWnd = HWND()
-    msg = DWORD(1)
-    # msg = DWORD(0x9424)
-    sz_id = c_char_p(b"start0")
-    sz_pw = s = c_char_p(b"qpwoei12!@")
-    sz_cert_pw = c_char_p(b"ekdnsfhem1!")
+
+class MsgHeader(ctypes.Structure):
+    _fields_ = [
+        ("msg_cd", wintypes.CHAR * 5),
+        ("user_msg", wintypes.CHAR * 80)
+    ]
+
+
+class Callback(ctypes.Structure):
+    _fields_ = [
+        ("dwMessageType", wintypes.WPARAM),
+        ("lParam", wintypes.LPARAM)
+    ]
+
+
+if __name__ == "__main__":
+    hWnd = wintypes.HWND()
+    msg = wintypes.DWORD()
+    # msg = wintypes.DWORD(0x9424)
+    sz_id = b"start0"
+    sz_pw = s = b"qpwoei12!@"
+    sz_cert_pw = b"ekdnsfhem1!"
 
     INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
-    wmca_dll = ctypes.windll.LoadLibrary('wmca.dll')
-    # wmca_dll = ctypes.WinDLL('wmca.dll')
+    # wmca_dll = ctypes.windll.LoadLibrary('wmca.dll')
+    wmca_dll = ctypes.WinDLL('wmca.dll')
 
-    wmcaConnect = wmca_dll.wmcaConnect
-    wmcaConnect.argtypes = (POINTER(HWND), PDWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR)
-    wmcaConnect.restype = BOOL
+    # wmcaConnect = wmca_dll.wmcaConnect
+    # wmcaConnect.argtypes = [wintypes.HWND, wintypes.DWORD, wintypes.CHAR, wintypes.CHAR, wintypes.LPSTR, wintypes.LPSTR, wintypes.LPSTR]
+    # wmcaConnect.restype = wintypes.BOOL
+    # wmcaConnect.errcheck = errcheck
 
-    result = wmcaConnect(byref(hWnd), byref(msg), b'T', b'W', sz_id, sz_pw, sz_cert_pw)
-    print("result : ", result)
-    print("pointer : ", hWnd.value, msg.value)
-    print("wmcaIsConnected : ", wmca_dll.wmcaIsConnected())
+    # result = wmcaConnect(hWnd, msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw)
+    # print("result : ", result)
+    # print(ctypes.WinError())
+    # print("pointer : ", hWnd.value, msg.value)
+    # print("wmcaIsConnected : ", wmca_dll.wmcaIsConnected())
+
+    """
+    BOOL wmcaLoad();
+    BOOL wmcaFree();
+    BOOL wmcaConnect(HWND hWnd, DWORD msg, char MediaType,char UserType,const char* szID,const char* szPW, const char* szCertPW);
+    BOOL wmcaDisconnect();
+    BOOL wmcaSetServer(const char* szServer);
+    BOOL wmcaSetPort(int port);
+    BOOL wmcaIsConnected();
+    BOOL wmcaTransact(HWND hWnd, int nTRID, constchar* szTRCode, const char* szInput, int nInputLen, int nHeadType, int nAccountIndex);
+    BOOL wmcaAttach(HWND hWnd, const char* szBCType, const char* szInput, int nCodeLen, int nInputLen);
+    BOOL wmcaDetach(HWND hWnd, const char* szBCType, const char* szInput, int nCodeLen, int nInputLen);
+    BOOL wmcaDetachWindow(HWND hWnd);
+    BOOL wmcaDetachAll();
+    BOOL wmcaSetOption(const char* szKey,const char* szValue);
+    """
+    # wmcaSetPort = wmca_dll.wmcaConnect
+    # wmcaSetPort.argtypes = [wintypes.INT]
+    # wmcaSetPort.restype = wintypes.BOOL
+    # result = wmca_dll.wmcaLoad()
+    # print("result : ", result)
+    # # result = wmcaSetPort(8400)
+    # print("result : ", result)
+
+    """
+    BOOL GetMessageW(
+      LPMSG lpMsg,
+      HWND  hWnd,
+      UINT  wMsgFilterMin,
+      UINT  wMsgFilterMax
+    );
+    """
 
     # property_func = WINFUNCTYPE(HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR)
     # result = property_func(wmcaConnect(byref(hWnd), byref(msg), b'T', b'W', sz_id, sz_pw, sz_cert_pw))
     # print("result : ", result)
     # print("pointer : ", hWnd.value, msg.value)
     # del wmca_dll
-    """prototype = WINFUNCTYPE(HWND, DWORD, CHAR, CHAR, PCHAR, PCHAR, PCHAR)
-    paramflags = ((OUTPUT_PARAM, "hWnd", hWnd),
-                  (OUTPUT_PARAM, "msg", msg),
-                  (INPUT_PARM, "MediaType", "T"),
-                  (INPUT_PARM, "UserType", "W"),
+    prototype = ctypes.WINFUNCTYPE(wintypes.INT, wintypes.HWND, wintypes.DWORD, wintypes.CHAR, wintypes.CHAR, wintypes.LPSTR, wintypes.LPSTR, wintypes.LPSTR)
+    paramflags = ((INPUT_PARM, "hWnd", hWnd),
+                  (INPUT_PARM, "msg", msg),
+                  (INPUT_PARM, "MediaType", b"T"),
+                  (INPUT_PARM, "UserType", b"W"),
                   (INPUT_PARM, "szID", sz_id),
                   (INPUT_PARM, "szPW", sz_pw),
                   (INPUT_PARM, "szCertPW", sz_cert_pw))
-    connect = prototype(("wmcaConnect", wmca), paramflags)"""
+    connect = prototype(("wmcaConnect", wmca_dll), paramflags)
+    result = connect(hWnd, msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw)
 
-    """INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
-    prototype = WINFUNCTYPE(INT, HWND, LPCWSTR, LPCWSTR, UINT)
-    paramflags = ((INPUT_PARM, "hwnd", 0),
-                  (INPUT_PARM, "text", "Hi"),
-                  (INPUT_PARM, "caption", "Your title"),
-                  (INPUT_PARM, "flags", MB_HELP | MB_YESNO | ICON_STOP))
-    MessageBox = prototype(("MessageBoxA", windll.user32), paramflags)
-
-    MessageBox()
-    MessageBox(text="Spam, spam, spam")
-    MessageBox(flags=1, text="foo bar")"""
-
-    """libc = cdll.msvcrt
-    strchr = libc.strchr
-    strchr.restype = c_char_p
-    strchr.argtypes = [c_char_p, c_char]
-    strchr(b"abcdef", b"d")
-
-    strchr(b"abcdef", b"def")
-
-    print(strchr(b"abcdef", b"x"))
-
-    strchr(b"abcdef", b"d")"""
+    print("result : ", result)
+    print(ctypes.WinError())
+    print("pointer : ", hWnd.value, msg.value)
+    print("wmcaIsConnected : ", wmca_dll.wmcaIsConnected())
