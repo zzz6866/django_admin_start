@@ -34,6 +34,14 @@ class FlipperHelperMynamuh():
     def PostThreadMessage(self):
         self.user32.PostThreadMessageW(self.tid, self.WM_TEST, 0, 0)
 
+    def PostThreadMessage(self):
+        # Обработка сообщений показа/скрытия меню.
+        msg = ctypes.wintypes.MSG()
+        while self.user32.GetMessageW(ctypes.byref(msg), 0, 0, 0) != 0:
+            self.user32.TranslateMessageW(msg)
+            self.user32.DispatchMessageW(msg)
+            self.user32.UnhookWinEvent
+
     def wmcaConnect(self):
         INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
 
@@ -111,7 +119,7 @@ class FlipperHelperMynamuh():
             WinEventProc,
             0,
             0,
-            0
+            0x0000
         )
         print("setWinEventHook success")
 
