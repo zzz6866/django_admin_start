@@ -26,31 +26,10 @@ class FlipperHelperMynamuh():
         self.user32 = ctypes.windll.user32
         self.kernel32 = ctypes.windll.kernel32
         self.wmca_dll = ctypes.WinDLL('wmca.dll')
-        self.WM_TEST = 512
+        self.WM_TEST = 0x24D0
         self.tid = self.kernel32.GetCurrentThreadId()
         self.hWnd = wintypes.HWND()
         self.msg = wintypes.MSG()
-
-
-    def print_log(self):
-        # try:
-        #     message = wintypes.MSG()
-        #     while self.user32.GetMessageW(ctypes.byref(message), 0, 0, 0) != 0:
-        #         print("found message {0}".format(self.user32.GetMessageW(ctypes.byref(message), 0, 0, 0)))
-        #         self.user32.TranslateMessage(message)
-        #         self.user32.DispatchMessageW(message)
-        # finally:
-        message = ctypes.byref(self.msg)
-        print(message)
-        while self.user32.GetMessageA(message, None, 0, 0) == self.WM_TEST:
-            print("print_log ::: ", self.msg.message)
-            if self.msg.message == self.WM_TEST:
-                if self.msg.wParam == 1:
-                    print('found self.msg!')
-                    self.callback(self.msg.wParam, self.msg.lParam)
-        self.user32.TranslateMessage(ctypes.byref(self.msg))
-        self.user32.DispatchMessageA(ctypes.byref(self.msg))
-        # root.after(1, self.print_log, root, self.callback)
 
     def PostThreadMessage(self):
         self.user32.PostThreadMessageW(self.tid, self.WM_TEST, 0, 0)
@@ -76,7 +55,6 @@ class FlipperHelperMynamuh():
 
         print("result : ", result)
         print("wmcaIsConnected : ", self.wmca_dll.wmcaIsConnected())
-        self.print_log()
 
     def callback(self, dwMessageType, lParam):
         print(dwMessageType)
@@ -87,20 +65,17 @@ class FlipperHelperMynamuh():
         wmcaLoad = wmca_dll.wmcaLoad
         result = wmcaLoad()
         print("wmcaLoad : ", result)
-        self.print_log()
 
     def wmcaFree(self):
         wmca_dll = ctypes.WinDLL('wmca.dll')
         wmcaFree = wmca_dll.wmcaFree
         result = wmcaFree()
         print("wmcaFree : ", result)
-        self.print_log()
 
     def wmcaSetPort(self):
         wmcaSetPort = self.wmca_dll.wmcaSetPort
-        result = wmcaSetPort()
+        result = wmcaSetPort(8400)
         print("wmcaSetPort : ", result)
-        self.print_log()
 
     def wmcaDetachAll(self):
         wmcaDetachAll = self.wmca_dll.wmcaDetachAll
