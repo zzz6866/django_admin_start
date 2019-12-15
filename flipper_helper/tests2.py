@@ -34,14 +34,6 @@ class FlipperHelperMynamuh():
     def PostThreadMessage(self):
         self.user32.PostThreadMessageW(self.tid, self.WM_TEST, 0, 0)
 
-    def PostThreadMessage(self):
-        # Обработка сообщений показа/скрытия меню.
-        msg = ctypes.wintypes.MSG()
-        while self.user32.GetMessageW(ctypes.byref(msg), 0, 0, 0) != 0:
-            self.user32.TranslateMessageW(msg)
-            self.user32.DispatchMessageW(msg)
-            self.user32.UnhookWinEvent
-
     def wmcaConnect(self):
         INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
 
@@ -50,16 +42,11 @@ class FlipperHelperMynamuh():
         sz_pw = b"qpwoei12!@"
         sz_cert_pw = b"ekdnsfhem1!"
 
-        prototype = ctypes.WINFUNCTYPE(wintypes.INT, wintypes.HWND, wintypes.DWORD, wintypes.CHAR, wintypes.CHAR, wintypes.LPSTR, wintypes.LPSTR, wintypes.LPSTR)
-        paramflags = ((INPUT_PARM, "hWnd", self.hWnd),
-                      (INPUT_PARM, "msg", msg),
-                      (INPUT_PARM, "MediaType", b"T"),
-                      (INPUT_PARM, "UserType", b"W"),
-                      (INPUT_PARM, "szID", sz_id),
-                      (INPUT_PARM, "szPW", sz_pw),
-                      (INPUT_PARM, "szCertPW", sz_cert_pw))
-        connect = prototype(("wmcaConnect", self.wmca_dll), paramflags)
-        result = connect()
+        wmcaConnect = self.wmca_dll.wmcaConnect
+        wmcaConnect.argtypes = [wintypes.HWND, wintypes.DWORD, wintypes.CHAR, wintypes.CHAR, wintypes.LPSTR, wintypes.LPSTR, wintypes.LPSTR]
+        wmcaConnect.restype = wintypes.BOOL
+        # wmcaConnect.errcheck = errcheck
+        result = wmcaConnect(self.hWnd, msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw)
 
         print("result : ", result)
         print("wmcaIsConnected : ", self.wmca_dll.wmcaIsConnected())
