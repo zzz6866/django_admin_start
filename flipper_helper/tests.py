@@ -238,14 +238,14 @@ typedef struct  {
 """
 
 
-class MsgHeader(ctypes.Structure):
+class MsgHeader(Structure):
     _fields_ = [
         ("msg_cd", CHAR * 5),
         ("user_msg", CHAR * 80)
     ]
 
 
-class Callback(ctypes.Structure):
+class Callback(Structure):
     _fields_ = [
         ("dwMessageType", WPARAM),
         ("lParam", LPARAM)
@@ -261,8 +261,8 @@ if __name__ == "__main__":
     sz_cert_pw = b"ekdnsfhem1!"
 
     INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
-    # wmca_dll = ctypes.windll.LoadLibrary('wmca.dll')
-    wmca_dll = ctypes.WinDLL('wmca.dll')
+    # wmca_dll = windll.LoadLibrary('wmca.dll')
+    wmca_dll = WinDLL('wmca.dll')
 
     # wmcaConnect = wmca_dll.wmcaConnect
     # wmcaConnect.argtypes = [HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR]
@@ -271,7 +271,7 @@ if __name__ == "__main__":
 
     # result = wmcaConnect(hWnd, msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw)
     # print("result : ", result)
-    # print(ctypes.WinError())
+    # print(WinError())
     # print("pointer : ", hWnd.value, msg.value)
     # print("wmcaIsConnected : ", wmca_dll.wmcaIsConnected())
 
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     # print("result : ", result)
     # print("pointer : ", hWnd.value, msg.value)
     # del wmca_dll
-    prototype = ctypes.WINFUNCTYPE(INT, HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR)
+    prototype = WINFUNCTYPE(INT, HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR)
     paramflags = ((INPUT_PARM, "hWnd", hWnd),
                   (INPUT_PARM, "msg", msg),
                   (INPUT_PARM, "MediaType", b"T"),
@@ -324,6 +324,6 @@ if __name__ == "__main__":
     result = connect(hWnd, msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw)
 
     print("result : ", result)
-    print(ctypes.WinError())
+    print(WinError())
     print("pointer : ", hWnd.value, msg.value)
     print("wmcaIsConnected : ", wmca_dll.wmcaIsConnected())
