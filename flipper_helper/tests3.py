@@ -1,39 +1,32 @@
-#!python3
+from ctypes import *
+from ctypes.wintypes import *
 
-import os
-import sys
-import tkinter as tk
-from sys import platform
+user32 = WinDLL('user32', use_last_error=True)
 
-from alldev.settings.base import BASE_DIR
+HC_ACTION = 0
+WH_CALLWNDPROC = 4
+WH_MOUSE_LL = 14
+WM_WMCA_EVENT = 0x24D0
+WM_QUIT = 0x0012
 
-if any([platform.startswith(os_name) for os_name in ['linux', 'darwin', 'freebsd']]):  # 리눅스용
-    from zugbruecke import *
-    from zugbruecke.wintypes import *
-elif platform.startswith('win'):  # 윈도우용
-    from ctypes import *
-    from wintypes import *
-
-    os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\flipper_helper\bin"])
-else:
-    # Handle unsupported platforms
-    print("NOT USEABLE")
-from threading import Thread
+MSG_TEXT = {WM_WMCA_EVENT: 'WM_WMCA_EVENT'}
 
 ULONG_PTR = WPARAM
 LRESULT = LPARAM
 LPMSG = POINTER(MSG)
 
-HOOKPROC = WINFUNCTYPE(LRESULT, INT, WPARAM, LPARAM)
-WmcaEventProc = HOOKPROC
+HOOKPROC = WINFUNCTYPE(LRESULT, c_int, WPARAM, LPARAM)
+CallWndProc = HOOKPROC
 
 
-class WMCAHOOKSTRUCT(Structure):
-    _fields_ = (('wParam', WPARAM),
-                ('lParam ', LPARAM))
+class tagCWPSTRUCT(Structure):
+    _fields_ = (('lParam ', LPARAM),
+                ('wParam', WPARAM),
+                ('message', UINT),
+                ('hwnd', HWND))
 
 
-LPMSLLHOOKSTRUCT = POINTER(WMCAHOOKSTRUCT)
+LPMSLLHOOKSTRUCT = POINTER(tagCWPSTRUCT)
 
 
 def errcheck_bool(result, func, args):
@@ -42,29 +35,55 @@ def errcheck_bool(result, func, args):
     return args
 
 
-class FlipperHelperMynamuh():
-    def __init__(self):
-        self.user32 = windll.user32
-        self.kernel32 = windll.kernel32
-        self.wmca_dll = WinDLL('wmca.dll')
-        self.WM_WMCA_EVENT = 0x24D0
-        self.tid = self.kernel32.GetCurrentThreadId()
-        self.hWnd = HWND()
-        self.msg = MSG()
+user32.SetWindowsHookExW.errcheck = errcheck_bool
+user32.SetWindowsHookExW.restype = HHOOK
+user32.SetWindowsHookExW.argtypes = (c_int,  # _In_ idHook
+                                     HOOKPROC,  # _In_ lpfn
+                                     HINSTANCE,  # _In_ hMod
+                                     DWORD)  # _In_ dwThreadId
 
-    def SendMessage(self):
-        print("SendMessage")
+user32.CallNextHookEx.restype = LRESULT
+user32.CallNextHookEx.argtypes = (HHOOK,  # _In_opt_ hhk
+                                  c_int,  # _In_     nCode
+                                  WPARAM,  # _In_     wParam
+                                  LPARAM)  # _In_     lParam
+
+user32.GetMessageW.argtypes = (LPMSG,  # _Out_    lpMsg
+                               HWND,  # _In_opt_ hWnd
+                               UINT,  # _In_     wMsgFilterMin
+                               UINT)  # _In_     wMsgFilterMax
+
+user32.TranslateMessage.argtypes = (LPMSG,)
+user32.DispatchMessageW.argtypes = (LPMSG,)
 
 
-flipper_nm = FlipperHelperMynamuh()
+@CallWndProc
+def CallbackFunc(nCode, wParam, lParam):
+    return user32.CallNextHookEx(None, nCode, wParam, lParam)
 
-root = tk.Tk()
 
-t = Thread(target=flipper_nm.__init__)
-t.daemon = True
-t.start()
+def mouse_msg_loop():
+    hHook = user32.SetWindowsHookExW(WH_CALLWNDPROC, CallbackFunc, None, 0)
+    msg = MSG()
+    while True:
+        bRet = user32.GetMessageW(byref(msg), None, 0, 0)
+        if not bRet:
+            break
+        if bRet == -1:
+            raise WinError(get_last_error())
+        user32.TranslateMessage(byref(msg))
+        user32.DispatchMessageW(byref(msg))
 
-tk.Button(root, text='----------------------------------------------------------------------------').pack()
-tk.Button(root, text='SendMessage', command=flipper_nm.SendMessage).pack()
 
-root.mainloop()
+if __name__ == '__main__':
+    import time
+    import threading
+
+    t = threading.Thread(target=mouse_msg_loop)
+    t.start()
+    while True:
+        try:
+            time.sleep(1)
+        except KeyboardInterrupt:
+            user32.PostThreadMessageW(t.ident, WM_QUIT, 0, 0)
+            break
