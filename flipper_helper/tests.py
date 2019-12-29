@@ -4,11 +4,11 @@ from sys import platform
 from alldev.settings.base import BASE_DIR
 
 if any([platform.startswith(os_name) for os_name in ['linux', 'darwin', 'freebsd']]):  # 리눅스용
-    import zugbruecke as ctypes
-    import zugbruecke.wintypes as wintypes
+    from zugbruecke import *
+    from zugbruecke.wintypes import *
 elif platform.startswith('win'):  # 윈도우용
-    import ctypes
-    import ctypes.wintypes as wintypes
+    from ctypes import *
+    from ctypes.wintypes import *
 
     os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\flipper_helper\bin"])
 else:
@@ -240,22 +240,22 @@ typedef struct  {
 
 class MsgHeader(ctypes.Structure):
     _fields_ = [
-        ("msg_cd", wintypes.CHAR * 5),
-        ("user_msg", wintypes.CHAR * 80)
+        ("msg_cd", CHAR * 5),
+        ("user_msg", CHAR * 80)
     ]
 
 
 class Callback(ctypes.Structure):
     _fields_ = [
-        ("dwMessageType", wintypes.WPARAM),
-        ("lParam", wintypes.LPARAM)
+        ("dwMessageType", WPARAM),
+        ("lParam", LPARAM)
     ]
 
 
 if __name__ == "__main__":
-    hWnd = wintypes.HWND()
-    msg = wintypes.DWORD()
-    # msg = wintypes.DWORD(0x9424)
+    hWnd = HWND()
+    msg = DWORD()
+    # msg = DWORD(0x9424)
     sz_id = b"start0"
     sz_pw = s = b"qpwoei12!@"
     sz_cert_pw = b"ekdnsfhem1!"
@@ -265,8 +265,8 @@ if __name__ == "__main__":
     wmca_dll = ctypes.WinDLL('wmca.dll')
 
     # wmcaConnect = wmca_dll.wmcaConnect
-    # wmcaConnect.argtypes = [wintypes.HWND, wintypes.DWORD, wintypes.CHAR, wintypes.CHAR, wintypes.LPSTR, wintypes.LPSTR, wintypes.LPSTR]
-    # wmcaConnect.restype = wintypes.BOOL
+    # wmcaConnect.argtypes = [HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR]
+    # wmcaConnect.restype = BOOL
     # wmcaConnect.errcheck = errcheck
 
     # result = wmcaConnect(hWnd, msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw)
@@ -291,8 +291,8 @@ if __name__ == "__main__":
     BOOL wmcaSetOption(const char* szKey,const char* szValue);
     """
     # wmcaSetPort = wmca_dll.wmcaConnect
-    # wmcaSetPort.argtypes = [wintypes.INT]
-    # wmcaSetPort.restype = wintypes.BOOL
+    # wmcaSetPort.argtypes = [INT]
+    # wmcaSetPort.restype = BOOL
     # result = wmca_dll.wmcaLoad()
     # print("result : ", result)
     # # result = wmcaSetPort(8400)
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     # print("result : ", result)
     # print("pointer : ", hWnd.value, msg.value)
     # del wmca_dll
-    prototype = ctypes.WINFUNCTYPE(wintypes.INT, wintypes.HWND, wintypes.DWORD, wintypes.CHAR, wintypes.CHAR, wintypes.LPSTR, wintypes.LPSTR, wintypes.LPSTR)
+    prototype = ctypes.WINFUNCTYPE(INT, HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR)
     paramflags = ((INPUT_PARM, "hWnd", hWnd),
                   (INPUT_PARM, "msg", msg),
                   (INPUT_PARM, "MediaType", b"T"),
