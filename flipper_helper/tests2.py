@@ -14,42 +14,132 @@ elif platform.startswith('win'):  # 윈도우용
     from ctypes import *
     from ctypes.wintypes import *
 
-    os.environ['PATH'] = ''.join([os.environ['PATH'], BASE_DIR + r"\flipper_helper\bin"])
+    os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\flipper_helper\bin"])
+    print(os.environ['PATH'].split(";"))
 else:
     # Handle unsupported platforms
     print("NOT USEABLE")
 from threading import Thread
 
-WM_USER = 1024
-CA_WMCAEVENT = WM_USER + 8400
-CA_CONNECTED = WM_USER + 110
-CA_DISCONNECTED = WM_USER + 120
-CA_SOCKETERROR = WM_USER + 130
-CA_RECEIVEDATA = WM_USER + 210
-CA_RECEIVESISE = WM_USER + 220
-CA_RECEIVEMESSAGE = WM_USER + 230
-CA_RECEIVECOMPLETE = WM_USER + 240
-CA_RECEIVEERROR = WM_USER + 250
+
+class CWPRETSTRUCT(Structure):
+    ''' a class to represent CWPRETSTRUCT structure
+    https://msdn.microsoft.com/en-us/library/windows/desktop/ms644963(v=vs.85).aspx '''
+
+    _fields_ = [('lResult', LPARAM),
+                ('lParam', LPARAM),
+                ('wParam', WPARAM),
+                ('message', UINT),
+                ('hwnd', HWND)]
 
 
-class FlipperHelperMynamuh():
+class WINDOWPOS(Structure):
+    ''' a class to represent WINDOWPOS structure
+    https://msdn.microsoft.com/en-gb/library/windows/desktop/ms632612(v=vs.85).aspx '''
+
+    _fields_ = [('hwnd', HWND),
+                ('hwndInsertAfter', HWND),
+                ('x', INT),
+                ('y', INT),
+                ('cx', INT),
+                ('cy', INT),
+                ('flags', UINT)]
+
+
+class App(tk.Tk):
+    ''' generic tk app with win api interaction '''
+
+    wh_callwndprocret = 12
+    wh_callwndproc = 4
+    wh_getmessage = 3
+    wh_journalrecord = 0
+    wh_journalplayback = 1
+    wh_keyboard = 2
+    wh_cbt = 5
+    wh_sysmsgfilter = 6
+
+    wm_windowposchanged = 71
+
+    swp_noownerzorder = 512
+    set_hook = windll.user32.SetWindowsHookExW
+    call_next_hook = windll.user32.CallNextHookEx
+    un_hook = windll.user32.UnhookWindowsHookEx
+    get_thread = windll.kernel32.GetCurrentThreadId
+    get_error = windll.kernel32.GetLastError
+    get_parent = windll.user32.GetParent
+    wnd_ret_proc = WINFUNCTYPE(c_long, INT, WPARAM, LPARAM)
+    wmca_dll = WinDLL('wmca.dll', use_last_error=True)
+
+    register_window_message = windll.user32.RegisterWindowMessageW
+    CA_WMCAEVENT = register_window_message("CA_WMCAEVENT")
+    CA_CONNECTED = register_window_message("CA_CONNECTED")
+    CA_DISCONNECTED = register_window_message("CA_DISCONNECTED")
+    CA_SOCKETERROR = register_window_message("CA_SOCKETERROR")
+    CA_RECEIVEDATA = register_window_message("CA_RECEIVEDATA")
+    CA_RECEIVESISE = register_window_message("CA_RECEIVESISE")
+    CA_RECEIVEMESSAGE = register_window_message("CA_RECEIVEMESSAGE")
+    CA_RECEIVECOMPLETE = register_window_message("CA_RECEIVECOMPLETE")
+    CA_RECEIVEERROR = register_window_message("CA_RECEIVEERROR")
+
     def __init__(self):
-        self.user32 = WinDLL('user32', use_last_error=True)
-        self.kernel32 = ctypes.windll.kernel32
-        self.wmca_dll = ctypes.WinDLL('wmca.dll')
-        self.WM_WMCA_EVENT = 9424
+        ''' generic __init__ '''
 
-        self.tid = self.kernel32.GetCurrentThreadId()
-        self.hWnd = HWND()
-        self.msg = MSG()
+        super().__init__()
+        self.minsize(700, 400)
+        self.hook = self.setup_hook()
+        self.protocol('WM_DELETE_WINDOW', self.on_closing)
 
-    def SendMessage(self):
-        self.user32.SendMessageW(self.wmca_dll._handle, self.WM_WMCA_EVENT, 11111, 11111)
+    def setup_hook(self):
+        ''' setting up the hook '''
+
+        thread = self.get_thread()
+        hook = self.set_hook(self.wh_callwndprocret, self.call_wnd_ret_proc, HINSTANCE(0), thread)
+        hook = self.set_hook(self.wh_callwndproc, self.call_wnd_ret_proc, HINSTANCE(0), thread)
+
+        if not hook:
+            raise WinError(self.get_error())
+
+        return hook
+
+    def on_closing(self):
+        ''' releasing the hook '''
+        if self.hook:
+            self.un_hook(self.hook)
+        self.destroy()
+
+    @staticmethod
+    @wnd_ret_proc
+    def call_wnd_ret_proc(nCode, wParam, lParam):
+        ''' an implementation of the CallWndRetProc callback
+        https://msdn.microsoft.com/en-us/library/windows/desktop/ms644976(v=vs.85).aspx'''
+
+        #   get a message
+        msg = cast(lParam, POINTER(CWPRETSTRUCT)).contents
+        if msg.message == App.wm_windowposchanged and msg.hwnd == App.get_parent(app.winfo_id()):
+            #   if message, which belongs to owner hwnd, is signaling that windows position is changed - check z-order
+            wnd_pos = cast(msg.lParam, POINTER(WINDOWPOS)).contents
+            print('z-order changed: %r' % ((wnd_pos.flags & App.swp_noownerzorder) != App.swp_noownerzorder))
+        elif msg.message == App.CA_WMCAEVENT and msg.hwnd == App.get_parent(app.winfo_id()):
+            print("CA_WMCAEVENT")
+        elif msg.message == App.CA_WMCAEVENT:
+            print("CA_WMCAEVENT")
+
+        return App.call_next_hook(None, nCode, wParam, lParam)
+
+    def send_message(self):
+        result = windll.user32.PostMessageW(HINSTANCE(0), App.CA_WMCAEVENT, 1, 1)
+        print(result)
+        result = windll.user32.SendMessageW(HINSTANCE(0), App.CA_WMCAEVENT, 1, 1)
+        print(result)
+        result = windll.user32.PostMessageW(HINSTANCE(0), App.wm_windowposchanged, 1, 1)
+        print(result)
+        result = windll.user32.SendMessageW(HINSTANCE(0), App.wm_windowposchanged, 1, 1)
+        print(result)
 
     def wmcaConnect(self):
         INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
 
-        msg = self.WM_WMCA_EVENT
+        msg = self.CA_WMCAEVENT
         sz_id = b"start0"
         sz_pw = b"qpwoei12!@"
         sz_cert_pw = b"ekdnsfhem1!"
@@ -58,125 +148,15 @@ class FlipperHelperMynamuh():
         wmcaConnect.argtypes = [HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR]
         wmcaConnect.restype = BOOL
         # wmcaConnect.errcheck = errcheck
-        result = wmcaConnect(self.hWnd, msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw)
+        result = wmcaConnect(HINSTANCE(0), msg, b'T', b'W', sz_id, sz_pw, sz_cert_pw)
 
         print("result : ", result)
         print("wmcaIsConnected : ", self.wmca_dll.wmcaIsConnected())
 
-    def setHook(self):
 
-        HC_ACTION = 0
-        WH_CALLWNDPROC = 4
-        WH_MOUSE_LL = 14
-        WM_QUIT = 0x0012
+app = App()
 
-        MSG_TEXT = {self.WM_WMCA_EVENT: 'WM_WMCA_EVENT'}
+tk.Button(app, text='SendMessage', command=app.send_message).pack()
+tk.Button(app, text='wmcaConnect', command=app.wmcaConnect).pack()
 
-        ULONG_PTR = WPARAM
-        LRESULT = LPARAM
-        LPMSG = POINTER(MSG)
-
-        HOOKPROC = WINFUNCTYPE(LRESULT, c_int, WPARAM, LPARAM)
-        CallWndProc = HOOKPROC
-
-        class tagCWPSTRUCT(Structure):
-            _fields_ = (('lParam ', LPARAM),
-                        ('wParam', WPARAM),
-                        ('message', UINT),
-                        ('hwnd', HWND))
-
-        LPMSLLHOOKSTRUCT = POINTER(tagCWPSTRUCT)
-
-        def errcheck_bool(result, func, args):
-            if not result:
-                raise WinError(get_last_error())
-            return args
-
-        self.user32.SetWindowsHookExW.errcheck = errcheck_bool
-        self.user32.SetWindowsHookExW.restype = HHOOK
-        self.user32.SetWindowsHookExW.argtypes = (c_int,  # _In_ idHook
-                                                  HOOKPROC,  # _In_ lpfn
-                                                  HINSTANCE,  # _In_ hMod
-                                                  DWORD)  # _In_ dwThreadId
-
-        self.user32.CallNextHookEx.restype = LRESULT
-        self.user32.CallNextHookEx.argtypes = (HHOOK,  # _In_opt_ hhk
-                                               c_int,  # _In_     nCode
-                                               WPARAM,  # _In_     wParam
-                                               LPARAM)  # _In_     lParam
-
-        self.user32.GetMessageW.argtypes = (LPMSG,  # _Out_    lpMsg
-                                            HWND,  # _In_opt_ hWnd
-                                            UINT,  # _In_     wMsgFilterMin
-                                            UINT)  # _In_     wMsgFilterMax
-
-        self.user32.TranslateMessage.argtypes = (LPMSG,)
-        self.user32.DispatchMessageW.argtypes = (LPMSG,)
-
-        @CallWndProc
-        def CallbackFunc(nCode, wParam, lParam):
-            msg = cast(lParam, LPMSLLHOOKSTRUCT)[0]
-            msgid = MSG_TEXT.get(wParam, str(wParam))
-            print(nCode, wParam, lParam)
-            # print('{:15s}: {}'.format(msgid, msg.wParam))
-            if nCode == HC_ACTION:
-                if self.WM_WMCA_EVENT == wParam:
-                    print("TEST")
-                # if wParam == CA_CONNECTED:
-                #     print("로그인 성공")
-                # elif wParam == CA_DISCONNECTED:
-                #     print("접속 끊김")
-                # elif wParam == CA_SOCKETERROR:
-                #     print("통신 오류 발생")
-                # elif wParam == CA_RECEIVEDATA:
-                #     print("서비스 응답 수신(TR)")
-                # elif wParam == CA_RECEIVESISE:
-                #     print("실시간 데이터 수신(BC)")
-                # elif wParam == CA_RECEIVEMESSAGE:
-                #     print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)")
-                # elif wParam == CA_RECEIVECOMPLETE:
-                #     print("서비스 처리 완료")
-                # elif wParam == CA_RECEIVEERROR:
-                #     print("서비스 처리중 오류 발생 (입력값 오류등)")
-                # elif wParam == self.WM_WMCA_EVENT:
-                #     print("EVENT TEST")
-                    
-            return self.user32.CallNextHookEx(None, nCode, wParam, lParam)
-
-        def wmca_msg_loop():
-            hHook = self.user32.SetWindowsHookExW(WH_CALLWNDPROC, CallbackFunc, self.wmca_dll._handle, 0)
-            print("hHook : ", hHook)
-            msg = MSG()
-            while True:
-                bRet = self.user32.GetMessageW(byref(msg), None, 0, 0)
-                if not bRet:
-                    break
-                if bRet == -1:
-                    raise WinError(get_last_error())
-                self.user32.TranslateMessage(byref(msg))
-                self.user32.DispatchMessageW(byref(msg))
-
-        t = Thread(target=wmca_msg_loop)
-        t.start()
-        # while True:
-        #     try:
-        #         time.sleep(1)
-        #     except KeyboardInterrupt:
-        #         self.user32.PostThreadMessageW(t.ident, WM_QUIT, 0, 0)
-        #         break
-
-
-flipper_nm = FlipperHelperMynamuh()
-
-root = tk.Tk()
-
-t = Thread(target=flipper_nm.__init__)
-t.daemon = True
-t.start()
-
-tk.Button(root, text='----------------------------------------------------------------------------').pack()
-tk.Button(root, text='SendMessage', command=flipper_nm.SendMessage).pack()
-tk.Button(root, text='로그인', command=flipper_nm.wmcaConnect).pack()
-tk.Button(root, text='후크', command=flipper_nm.setHook).pack()
-
-root.mainloop()
+app.mainloop()
