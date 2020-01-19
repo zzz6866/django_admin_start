@@ -190,5 +190,3 @@ LOGGING = {
         },
     },
 }
-
-MONGOADMIN_OVERRIDE_ADMIN = True
