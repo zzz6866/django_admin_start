@@ -32,7 +32,6 @@ INSTALLED_APPS = [
     'django_celery_beat',
     'django_celery_results',
     'torrent_bot.apps.CoinBotConfig',
-    'mongoadmin',
 ]
 
 MIDDLEWARE = [
@@ -190,5 +189,3 @@ LOGGING = {
         },
     },
 }
-
-MONGOADMIN_OVERRIDE_ADMIN = True
