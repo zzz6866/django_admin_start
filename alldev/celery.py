@@ -18,12 +18,12 @@ app = Celery('alldev')
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
-app.config_from_object('django.conf:settings', namespace='CELERY')
+app.config_from_object('django.conf:settings')
 # app.autodiscover_tasks(lambda: INSTALLED_APPS)
 
 # Load task modules from all registered Django app configs.
 # tasks.py 파일에 정의한 스케쥴에 대해 자동으로 목록화 한다. __init__.py 와 같이 사용 한다. 참고 - http://docs.celeryproject.org/en/latest/django/first-steps-with-django.html
-app.autodiscover_tasks()
+app.autodiscover_tasks(packages=None)
 # UTC FALSE 환경 설정시 시간차이가 발생하여 지정된 시간에 실행되지 않고 무한 반복 실행됨으로 인한 추가 설정
 # app.now = datetime.now
 # app.conf.timezone = 'Asia/Seoul'
