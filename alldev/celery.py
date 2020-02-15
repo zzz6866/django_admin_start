@@ -9,6 +9,8 @@ from celery import Celery
 # os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'alldev.settings.production') # 환경 변수에 선언하여 사용하기 때문에 주석 처리
 from celery.utils.log import get_task_logger
 
+from alldev.settings.local import DATABASES
+
 logger = get_task_logger(__name__)
 
 os.environ.setdefault('FORKED_BY_MULTIPROCESSING', '1')  # TODO: ValueError: not enough values to unpack (expected 3, got 0) <= 에러 발생으로 인한 추가
@@ -18,7 +20,7 @@ app = Celery('alldev')
 # the configuration object to child processes.
 # - namespace='CELERY' means all celery-related configuration keys
 #   should have a `CELERY_` prefix.
-app.config_from_object('django.conf:settings')
+app.config_from_object('django.conf:settings', namespace='CELERY')
 # app.autodiscover_tasks(lambda: INSTALLED_APPS)
 
 # Load task modules from all registered Django app configs.
