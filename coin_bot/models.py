@@ -24,6 +24,9 @@ class PublicTicker(models.Model):
     day_fluctate_rate = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0.0)
     date = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        app_label = 'mongodb_celery'
+
     @classmethod
     def set_json(cls, coin_code=None, json=None, date=None):
         # datetime.fromtimestamp(1350663248, tz= pytz.timezone('America/New_York'))
