@@ -1,5 +1,5 @@
 from django.conf.urls import url
-from namuh_helper import views
+from namuh_bot import views
 
 urlpatterns = [
     url(r'^index$', views.index),

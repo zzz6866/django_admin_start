@@ -17,7 +17,7 @@ else:
     # Handle unsupported platforms
     print("NOT USEABLE")
 
-from namuh_helper.models import *
+from namuh_bot.models import *
 import os
 import sys
 
