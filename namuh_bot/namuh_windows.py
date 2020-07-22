@@ -12,7 +12,7 @@ if any([platform.startswith(os_name) for os_name in ['linux', 'darwin', 'freebsd
 elif platform.startswith('win'):  # 윈도우용
     from ctypes.wintypes import *
 
-    os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\namuh_helper\bin"])
+    os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\namuh_bot\bin"])
 else:
     # Handle unsupported platforms
     print("NOT USEABLE")

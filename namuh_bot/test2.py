@@ -95,20 +95,18 @@ def MainWin():
     if not user32.RegisterClassA(byref(wndclass)):
         raise WinError()
     # Create Window
-    # hwnd = CreateWindowEx(0,
-    #                       wndclass.lpszClassName,
-    #                       b"Python Window",
-    #                       WS_OVERLAPPEDWINDOW,
-    #                       CW_USEDEFAULT,
-    #                       CW_USEDEFAULT,
-    #                       CW_USEDEFAULT,
-    #                       CW_USEDEFAULT,
-    #                       NULL,
-    #                       NULL,
-    #                       wndclass.hInstance,
-    #                       NULL)
-
-    hwnd = None
+    hwnd = CreateWindowEx(0,
+                          wndclass.lpszClassName,
+                          b"Python Window",
+                          WS_OVERLAPPEDWINDOW,
+                          CW_USEDEFAULT,
+                          CW_USEDEFAULT,
+                          CW_USEDEFAULT,
+                          CW_USEDEFAULT,
+                          NULL,
+                          NULL,
+                          wndclass.hInstance,
+                          NULL)
 
     # Show Window
     user32.ShowWindow(c_int(hwnd), c_int(SW_SHOWNORMAL))
