@@ -3,8 +3,9 @@ from celery.utils.log import get_task_logger
 logger = get_task_logger(__name__)
 
 import os
-from sys import platform
+from sys import *
 
+from namuh_bot.models import *
 from alldev.settings.base import BASE_DIR
 
 if any([platform.startswith(os_name) for os_name in ['linux', 'darwin', 'freebsd']]):  # 리눅스용
@@ -16,15 +17,6 @@ elif platform.startswith('win'):  # 윈도우용
 else:
     # Handle unsupported platforms
     print("NOT USEABLE")
-
-from namuh_bot.models import *
-import os
-import sys
-
-import win32api
-import win32con
-import win32gui
-import winerror
 
 # Create your tests here.
 """
@@ -232,216 +224,188 @@ CA_SOCKERROR		: 서버 이상이나 네트워크 이상 등의 이유로 접속�
 
 class NamuhWindow:
     def __init__(self):
-        # msg_TaskbarRestart = win32gui.RegisterWindowMessage("NamuhTaskbarCreated")
-        message_map = {
-            # msg_TaskbarRestart: self.OnRestart,
-            win32con.WM_DESTROY: self.OnDestroy,
-            win32con.WM_COMMAND: self.OnCommand,
-            win32con.WM_USER + 20: self.OnTaskbarNotify,
-            CA_WMCAEVENT: self.OnWmcaEvent,
-        }
-        # Register the Window class.
-        wc = win32gui.WNDCLASS()
-        hinst = wc.hInstance = win32api.GetModuleHandle(None)
-        wc.lpszClassName = "NamuhTaskbar"
-        wc.style = win32con.CS_VREDRAW | win32con.CS_HREDRAW
-        wc.hCursor = win32api.LoadCursor(0, win32con.IDC_ARROW)
-        wc.hbrBackground = win32con.COLOR_WINDOW
-        wc.lpfnWndProc = message_map  # could also specify a wndproc.
+        # Define Window Class
+        wc = WNDCLASS()
+        wc.style = CS_HREDRAW | CS_VREDRAW
+        wc.lpfnWndProc = WNDPROC(self.wnd_proc)
+        wc.cbClsExtra = wc.cbWndExtra = 0
+        wc.hInstance = kernel32.GetModuleHandleA(INT(NULL))
+        wc.hIcon = user32.LoadIconA(INT(NULL), INT(IDI_APPLICATION))
+        wc.hCursor = user32.LoadCursorA(INT(NULL), INT(IDC_ARROW))
+        wc.hbrBackground = gdi32.GetStockObject(INT(WHITE_BRUSH))
+        wc.lpszMenuName = None
+        wc.lpszClassName = b"MainWin"
 
-        # Don't blow up if class already registered to make testing easier
-        try:
-            classAtom = win32gui.RegisterClass(wc)
-        except win32gui.error as err_info:
-            if err_info.winerror != winerror.ERROR_CLASS_ALREADY_EXISTS:
-                raise
+        # Register Window Class
+        if not user32.RegisterClassA(byref(wc)):
+            raise WinError()
 
-        # Create the Window.
-        style = win32con.WS_OVERLAPPED | win32con.WS_SYSMENU
-        self.hwnd = win32gui.CreateWindow(wc.lpszClassName, "NamuhTaskbar Demo", style, \
-                                          0, 0, win32con.CW_USEDEFAULT, win32con.CW_USEDEFAULT, \
-                                          0, 0, hinst, None)
-        win32gui.UpdateWindow(self.hwnd)
-        self._DoCreateIcons()
+        # Create Window
+        self.hwnd = CreateWindowEx(0,
+                                   wc.lpszClassName,
+                                   b"Namuh Window",
+                                   WS_OVERLAPPEDWINDOW,
+                                   CW_USEDEFAULT,
+                                   CW_USEDEFAULT,
+                                   CW_USEDEFAULT,
+                                   CW_USEDEFAULT,
+                                   NULL,
+                                   NULL,
+                                   wc.hInstance,
+                                   NULL)
+
+        # Show Window
+        # user32.ShowWindow(INT(hwnd), INT(SW_SHOWNORMAL))
+        # user32.UpdateWindow(INT(hwnd))
+
+        sz_id = b"asdf"  # 사용자 아이디
+        sz_pw = b"asdf"  # 사용자 패스워드
+        sz_cert_pw = b"asdf"  # 공인인증서 패스워드
+
         self.wmca = WinDllWmca()
-        self.wmca.connect(self.hwnd)  # 프로그램 실행시 로그인
+        self.wmca.connect(self.hwnd, sz_id, sz_pw, sz_cert_pw)  # 프로그램 실행시 로그인
+        self.pump_messages()
 
-    def _DoCreateIcons(self):
-        # Try and find a custom icon
-        hinst = win32api.GetModuleHandle(None)
-        iconPathName = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "pyc.ico"))
-        if not os.path.isfile(iconPathName):
-            # Look in DLLs dir, a-la py 2.5
-            iconPathName = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "DLLs", "pyc.ico"))
-        if not os.path.isfile(iconPathName):
-            # Look in the source tree.
-            iconPathName = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "..\\PC\\pyc.ico"))
-        if os.path.isfile(iconPathName):
-            icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
-            hicon = win32gui.LoadImage(hinst, iconPathName, win32con.IMAGE_ICON, 0, 0, icon_flags)
-        else:
-            print("Can't find a Python icon file - using default")
-            hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
-
-        flags = win32gui.NIF_ICON | win32gui.NIF_MESSAGE | win32gui.NIF_TIP
-        nid = (self.hwnd, 0, flags, win32con.WM_USER + 20, hicon, "Namuh Stock Agent")
-        try:
-            win32gui.Shell_NotifyIcon(win32gui.NIM_ADD, nid)
-        except win32gui.error:
-            # This is common when windows is starting, and this code is hit
-            # before the taskbar has been created.
-            print("Failed to add the taskbar icon - is explorer running?")
-            # but keep running anyway - when explorer starts, we get the
-            # TaskbarCreated message.
-
-    def OnRestart(self, hwnd, msg, wparam, lparam):
-        self._DoCreateIcons()
-
-    def OnDestroy(self, hwnd, msg, wparam, lparam):
-        nid = (self.hwnd, 0)
-        win32gui.Shell_NotifyIcon(win32gui.NIM_DELETE, nid)
-        win32gui.PostQuitMessage(0)  # Terminate the app.
-
-    def OnTaskbarNotify(self, hwnd, msg, wparam, lparam):
-        if lparam == win32con.WM_LBUTTONUP:
-            print("You clicked me.")
-        elif lparam == win32con.WM_LBUTTONDBLCLK:
-            print("You double-clicked me - goodbye")
-            win32gui.DestroyWindow(self.hwnd)
-        elif lparam == win32con.WM_RBUTTONUP:
-            print("You right clicked me.")
-            menu = win32gui.CreatePopupMenu()
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1000, "Init")
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1004, "Exit wmca")
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1001, "Set Server")
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1002, "Set Port")
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1003, "Connect")
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1999, "Exit")
-            pos = win32gui.GetCursorPos()
-            win32gui.SetForegroundWindow(self.hwnd)
-            win32gui.TrackPopupMenu(menu, win32con.TPM_LEFTALIGN, pos[0], pos[1], 0, self.hwnd, None)
-            win32gui.PostMessage(self.hwnd, win32con.WM_NULL, 0, 0)
-        return 1
-
-    def OnCommand(self, hwnd, msg, wparam, lparam):
-        id = win32api.LOWORD(wparam)
-        if id == 1000:
-            self.wmca.load()
-        elif id == 1002:
-            self.wmca.set_port(8400)
-        elif id == 1003:
-            self.wmca.connect(hwnd)
-        elif id == 1004:
-            self.wmca.free()
-        elif id == 1999:
-            print("Exit program")
-            win32gui.DestroyWindow(self.hwnd)
-        else:
-            print("Unknown command -", id)
-
-    def OnWmcaEvent(self, hwnd, msg, wparam, lparam):
-        # id = win32api.LOWORD(wparam)
-        # print("OnWmcaEvent : ", hwnd, msg, wparam, lparam)
-
-        if wparam == CA_CONNECTED:  # 로그인 성공
+    def wnd_proc(self, hwnd, message, wParam, lParam):
+        if message == WM_DESTROY:  # 윈도우 창 닫기 버튼 클릭시
+            user32.PostQuitMessage(0)
+        elif wParam == CA_CONNECTED:  # 로그인 성공
             print("로그인 성공")
-        elif wparam == CA_DISCONNECTED:  # 접속 끊김
+        elif wParam == CA_DISCONNECTED:  # 접속 끊김
             print("접속 끊김")
-        elif wparam == CA_SOCKETERROR:  # 통신 오류 발생
+            # user32.PostQuitMessage(0)
+            # user32.DestroyWindow(self.hwnd)
+            exit()
+        elif wParam == CA_SOCKETERROR:  # 통신 오류 발생
             print("통신 오류 발생")
-        elif wparam == CA_RECEIVEDATA:  # 서비스 응답 수신(TR)
+        elif wParam == CA_RECEIVEDATA:  # 서비스 응답 수신(TR)
             print("서비스 응답 수신(TR)")
-        elif wparam == CA_RECEIVESISE:  # 실시간 데이터 수신(BC)
+        elif wParam == CA_RECEIVESISE:  # 실시간 데이터 수신(BC)
             print("실시간 데이터 수신(BC)")
-        elif wparam == CA_RECEIVEMESSAGE:  # 상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)
-            print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)")
-            self.OnWmReceivemessage(lparam)
-        elif wparam == CA_RECEIVECOMPLETE:  # 서비스 처리 완료
+        elif wParam == CA_RECEIVEMESSAGE:  # 상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)
+            self.on_wm_receivemessage(lParam)
+        elif wParam == CA_RECEIVECOMPLETE:  # 서비스 처리 완료
             print("서비스 처리 완료")
-        elif wparam == CA_RECEIVEERROR:  # 서비스 처리중 오류 발생 (입력값 오류등)
+        elif wParam == CA_RECEIVEERROR:  # 서비스 처리중 오류 발생 (입력값 오류등)
             print("서비스 처리중 오류 발생 (입력값 오류등)")
-        else:
-            print("정의 되지 않은 오류 : ", wparam)
 
-    def OnWmReceivemessage(self, lparam):
-        p_message = cast(lparam, POINTER(OutdatablockStruct))
-        p_msg_header = cast(p_message.contents.pData.contents.szData, POINTER(MsgHeaderStruct))
+        return user32.DefWindowProcA(INT(hwnd), INT(message), INT(wParam), INT(lParam))
+
+    def on_wm_receivemessage(self, lparam):
+        p_msg = cast(lparam, POINTER(OutdatablockStruct))
+        p_msg_header = cast(p_msg.contents.pData.contents.szData, POINTER(MsgHeaderStruct))
         msg_cd = p_msg_header.contents.msg_cd.decode("utf-8")
         user_msg = p_msg_header.contents.user_msg.decode("euc-kr")
-        print("[{0}]  {1} : {2}".format(p_message.contents.TrIndex, msg_cd, user_msg))
+        print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.contents.TrIndex, msg_cd, user_msg))
+
+    def pump_messages(self):
+        # Pump Messages
+        msg = MSG()
+        p_msg = pointer(msg)
+
+        while user32.GetMessageA(p_msg, NULL, 0, 0) != 0:
+            user32.TranslateMessage(p_msg)
+            user32.DispatchMessageA(p_msg)
+        return msg.wParam
 
 
 class WinDllWmca:
     def __init__(self):
         self.wmca_dll = windll.LoadLibrary('wmca.dll')
 
-    def connect(self, hwnd):  # 접속 후 로그인(인증)
-        sz_id = b"asdf"  # 사용자 아이디
-        sz_pw = b"asdf"  # 사용자 패스워드
-        sz_cert_pw = b"asdf"  # 공인인증서 패스워드
+    def connect(self, hwnd, sz_id, sz_pw, sz_cert_pw):  # 접속 후 로그인(인증)
 
-        prototype = WINFUNCTYPE(BOOL, HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR)
-        paramflags = ((INPUT_PARM, "hWnd", hwnd),
-                      (INPUT_PARM, "msg", CA_WMCAEVENT),
-                      (INPUT_PARM, "MediaType", b"T"),
-                      (INPUT_PARM, "UserType", b"W"),
-                      (INPUT_PARM, "szID", sz_id),
-                      (INPUT_PARM, "szPW", sz_pw),
-                      (INPUT_PARM, "szCertPW", sz_cert_pw))
-        func = prototype(("wmcaConnect", self.wmca_dll), paramflags)
-        result = func()
-        print(result)
+        func = self.wmca_dll.wmcaConnect
+        func.argtypes = [HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR]
+        func.restype = BOOL
+        result = func(hwnd, CA_WMCAEVENT, b"T", b"W", sz_id, sz_pw, sz_cert_pw)
+        print("connect =", bool(result))
 
     def disconnect(self):  # 접속 해제
-        prototype = WINFUNCTYPE(BOOL)
-        paramflags = ()
-        func = prototype(("wmcaDisconnect", self.wmca_dll), paramflags)
-        print(func())
+        func = self.wmca_dll.wmcaDisconnect
+        func.argtypes = []
+        func.restype = BOOL
+        result = func()
+        print("disconnect =", bool(result))
 
     def is_connected(self):  # 접속 여부 확인
-        print(__name__)
+        func = self.wmca_dll.wmcaIsConnected
+        func.argtypes = []
+        func.restype = BOOL
+        result = func()
+        print("is_connected =", bool(result))
 
-    def query(self):  # 서비스(TR) 호출
-        print(__name__)
+    def query(self, hwnd, szTRCode, szInput, nInputLen, nAccountIndex):  # 서비스(TR) 호출
+        func = self.wmca_dll.wmcaQuery
+        # HWND hWnd, int nTRID, constchar* szTRCode, const char* szInput, int nInputLen, int nAccountIndex
+        func.argtypes = [HWND, INT, LPSTR, LPSTR, INT, INT]
+        func.restype = BOOL
+        result = func(hwnd, szTRCode, szInput, nInputLen, nAccountIndex)
+        print("query =", bool(result))
 
-    def attach(self):  # 실시간 등록
-        print(__name__)
+    def attach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 등록
+        func = self.wmca_dll.wmcaQuery
+        # HWND hWnd, const char* szBCType, const char* szInput, int nCodeLen, int nInputLen
+        func.argtypes = [HWND, LPSTR, LPSTR, INT, INT]
+        func.restype = BOOL
+        result = func(hwnd, szBCType, szInput, nCodeLen, nInputLen)
+        print("attach =", bool(result))
 
-    def detach(self):  # 실시간 취소
-        print(__name__)
+    def detach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 취소
+        func = self.wmca_dll.wmcaQuery
+        # HWND hWnd, const char* szBCType, const char* szInput, int nCodeLen, int nInputLen
+        func.argtypes = [HWND, LPSTR, LPSTR, INT, INT]
+        func.restype = BOOL
+        result = func(hwnd, szBCType, szInput, nCodeLen, nInputLen)
+        print("detach =", bool(result))
 
-    def detach_window(self):  # 실시간 일괄 취소
-        print(__name__)
+    def detach_window(self, hwnd):  # 실시간 일괄 취소
+        func = self.wmca_dll.wmcaDetachWindow
+        func.argtypes = [HWND]
+        func.restype = BOOL
+        result = func(hwnd)
+        print("detach_window =", bool(result))
 
     def detach_all(self):  # 실시간 일괄 취소
-        print(__name__)
+        func = self.wmca_dll.wmcaDetachAll
+        func.argtypes = []
+        func.restype = BOOL
+        result = func()
+        print("detach_all =", bool(result))
 
     def load(self):  # dll 실행
-        prototype = WINFUNCTYPE(BOOL)
-        paramflags = ()
-        func = prototype(("wmcaLoad", self.wmca_dll), paramflags)
-        print(func())
+        func = self.wmca_dll.wmcaLoad
+        func.argtypes = []
+        func.restype = BOOL
+        result = func()
+        print("load =", bool(result))
 
     def free(self):  # dll 종료
-        prototype = WINFUNCTYPE(BOOL)
-        paramflags = ()
-        func = prototype(("wmcaFree", self.wmca_dll), paramflags)
-        print(func())
+        func = self.wmca_dll.wmcaFree
+        func.argtypes = []
+        func.restype = BOOL
+        result = func()
+        print("free =", bool(result))
 
     def set_server(self, server):
-        print(__name__)
+        func = self.wmca_dll.wmcaSetServer
+        func.argtypes = [LPSTR]
+        func.restype = BOOL
+        result = func(server)
+        print("set_server =", bool(result))
 
     def set_port(self, port):
-        prototype = WINFUNCTYPE(BOOL, INT)
-        paramflags = ((INPUT_PARM, "port", port),)
-        func = prototype(("wmcaSetPort", self.wmca_dll), paramflags)
-        print(func())
+        func = self.wmca_dll.wmcaSetPort
+        func.argtypes = [INT]
+        func.restype = BOOL
+        result = func(port)
+        print("set_port =", bool(result))
 
 
 def main():
     w = NamuhWindow()
-    win32gui.PumpMessages()
+    w.pump_messages()
 
 
 if __name__ == '__main__':
-    main()
+    exit(main())
