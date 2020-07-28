@@ -1,8 +1,13 @@
-from ctypes.wintypes import *
+from sys import *
+if any([platform.startswith(os_name) for os_name in ['linux', 'darwin', 'freebsd']]):  # 리눅스용
+    from zugbruecke.wintypes import *
+    from zugbruecke import *
+elif platform.startswith('win'):  # 윈도우용
+    from ctypes.wintypes import *
+    from ctypes import *
 
 from django.core.validators import RegexValidator
 from django.db import models
-from ctypes import *
 
 # Create your models here.
 # 단타 도우미 models
