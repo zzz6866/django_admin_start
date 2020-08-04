@@ -1,5 +1,6 @@
 FROM python:3.7.5
 
+# wine insall
 RUN set -ex && \
     dpkg --add-architecture i386 && \
     apt-get update && \
@@ -11,14 +12,31 @@ RUN set -ex && \
     apt-get update && apt-get install -y --install-recommends winehq-stable
 
 
+WORKDIR /root/.vnc/
+# x11vnc install
+RUN apt-get update && \
+    apt-get install -y x11vnc net-tools xvfb && \
+    x11vnc -storepasswd 1q2w3e4r5t /root/.vnc/passwd
+    #x11vnc -forever -usepw -create
+    #x11vnc -auth guess -forever -loop -noxdamage -repeat -rfbauth /root/.vnc/passwd -rfbport 5900 -shared
+
+
+# apt-get clean
 RUN set -ex && \
     apt-get install -y supervisor curl git pwgen && \
 	apt-get autoclean && \
 	apt-get autoremove && \
 	rm -rf /var/lib/apt/lists/*
 
-WORKDIR /alldev
+# useradd
+RUN addgroup -S django && adduser -S django -G django
+USER django
+WORKDIR /home/django
 
-EXPOSE 8000
+# django 8000, vnc server 5900
+EXPOSE 8000 5900
 
+#COPY entrypoint.sh entrypoint.sh
+
+#CMD ["entrypoint.sh"]
 CMD ["python3"]
