@@ -1,10 +1,5 @@
-from sys import *
-if any([platform.startswith(os_name) for os_name in ['linux', 'darwin', 'freebsd']]):  # 리눅스용
-    from zugbruecke.wintypes import *
-    from zugbruecke import *
-elif platform.startswith('win'):  # 윈도우용
-    from ctypes.wintypes import *
-    from ctypes import *
+from ctypes.wintypes import *
+from ctypes import *
 
 from django.core.validators import RegexValidator
 from django.db import models
@@ -14,14 +9,10 @@ from django.db import models
 from django.utils import timezone
 
 # 윈도우 메시지 상수 선언
-WM_PAINT = 15
-WM_DESTROY = 2
-
 DT_SINGLELINE = 32
 DT_CENTER = 1
 DT_VCENTER = 4
 
-NULL = 0
 CW_USEDEFAULT = -2147483648
 IDI_APPLICATION = 32512
 WS_OVERLAPPEDWINDOW = 13565952
@@ -44,6 +35,7 @@ CA_RECEIVESISE = WM_USER + 220  # 실시간 데이터 수신(BC)
 CA_RECEIVEMESSAGE = WM_USER + 230  # 상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)
 CA_RECEIVECOMPLETE = WM_USER + 240  # 서비스 처리 완료
 CA_RECEIVEERROR = WM_USER + 250  # 서비스 처리중 오류 발생 (입력값 오류등)
+ON_TASKBAR_NOTIFY = WM_USER + 20
 
 # class FlipperHelper(models.Model):
 #     investmentable_amount = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0)  # 투자 가능 금액(증권사 입금 금액)
@@ -72,33 +64,3 @@ class ReceivedStruct(Structure):
 class OutdatablockStruct(Structure):
     _fields_ = [('TrIndex', INT),
                 ('pData', POINTER(ReceivedStruct))]
-
-
-WNDPROC = WINFUNCTYPE(LONG, INT, UINT, INT, INT)
-
-
-class WNDCLASS(Structure):
-    _fields_ = [('style', UINT),
-                ('lpfnWndProc', WNDPROC),
-                ('cbClsExtra', INT),
-                ('cbWndExtra', INT),
-                ('hInstance', INT),
-                ('hIcon', INT),
-                ('hCursor', INT),
-                ('hbrBackground', INT),
-                ('lpszMenuName', LPSTR),
-                ('lpszClassName', LPSTR)]
-
-
-def ErrorIfZero(handle):
-    if handle == 0:
-        raise WinError
-    else:
-        return handle
-
-kernel32 = windll.kernel32
-user32 = windll.user32
-gdi32 = windll.gdi32
-CreateWindowEx = user32.CreateWindowExA
-CreateWindowEx.argtypes = [INT, LPSTR, LPSTR, INT, INT, INT, INT, INT, INT, INT, INT, INT]
-CreateWindowEx.restype = ErrorIfZero
