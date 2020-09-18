@@ -37,6 +37,9 @@ CA_RECEIVECOMPLETE = WM_USER + 240  # 서비스 처리 완료
 CA_RECEIVEERROR = WM_USER + 250  # 서비스 처리중 오류 발생 (입력값 오류등)
 ON_TASKBAR_NOTIFY = WM_USER + 20
 
+# windows tray
+MENU_EXIT = 1025
+
 # class FlipperHelper(models.Model):
 #     investmentable_amount = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0)  # 투자 가능 금액(증권사 입금 금액)
 #     investment_amount = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0)  # 투자 시점 금액

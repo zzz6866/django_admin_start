@@ -27,7 +27,7 @@ class NamuhWindow:
             # msg_TaskbarRestart: self.OnRestart,
             # win32con.WM_DESTROY: self.OnDestroy,
             win32con.WM_COMMAND: self.wnd_proc,
-            ON_TASKBAR_NOTIFY: self.OnTaskbarNotify,
+            ON_TASKBAR_NOTIFY: self.on_taskbar_notify,
         }
 
         # Define Window Class
@@ -96,14 +96,12 @@ class NamuhWindow:
             # TaskbarCreated message.
 
     def wnd_proc(self, hwnd, message, wParam, lParam):
-        if message == win32con.WM_DESTROY or wParam == 1025 or wParam == CA_DISCONNECTED:  # 윈도우 창 닫기 버튼 클릭시 # 접속 끊김
+        if message == win32con.WM_DESTROY or wParam == MENU_EXIT or wParam == CA_DISCONNECTED:  # 윈도우 창 닫기 버튼 클릭시 # 접속 끊김
             print("Goodbye")
             win32gui.PostQuitMessage(0)
             win32gui.DestroyWindow(self.hwnd)
         elif wParam == CA_CONNECTED:  # 로그인 성공
             print("로그인 성공", lParam)
-            lparam_msg = LPBYTE.from_address(lParam)
-            print("lparam_msg=", lparam_msg)
         elif wParam == CA_SOCKETERROR:  # 통신 오류 발생
             print("통신 오류 발생")
         elif wParam == CA_RECEIVEDATA:  # 서비스 응답 수신(TR)
@@ -126,7 +124,7 @@ class NamuhWindow:
         user_msg = p_msg_header.contents.user_msg.decode("euc-kr")
         print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.contents.TrIndex, msg_cd, user_msg))
 
-    def OnTaskbarNotify(self, hwnd, msg, wparam, lparam):
+    def on_taskbar_notify(self, hwnd, msg, wparam, lparam):
 
         if lparam == win32con.WM_LBUTTONUP:
             print("You clicked me.")
@@ -138,7 +136,7 @@ class NamuhWindow:
             menu = win32gui.CreatePopupMenu()
             # win32gui.AppendMenu(menu, win32con.MF_STRING, 1023, "Display Dialog")
             # win32gui.AppendMenu(menu, win32con.MF_STRING, 1024, "Say Hello")
-            win32gui.AppendMenu(menu, win32con.MF_STRING, 1025, "Exit program")
+            win32gui.AppendMenu(menu, win32con.MF_STRING, MENU_EXIT, "Exit program")
             pos = win32gui.GetCursorPos()
             # See http://msdn.microsoft.com/library/default.asp?url=/library/en-us/winui/menus_0hdi.asp
             win32gui.SetForegroundWindow(self.hwnd)
@@ -225,24 +223,6 @@ class WinDllWmca:
         result = func()
         print("free =", bool(result))
 
-    def set_server(self, server):
-        func = self.wmca_dll.wmcaSetServer
-        func.argtypes = [LPSTR]
-        func.restype = BOOL
-        result = func(server)
-        print("set_server =", bool(result))
-
-    def set_port(self, port):
-        func = self.wmca_dll.wmcaSetPort
-        func.argtypes = [INT]
-        func.restype = BOOL
-        result = func(port)
-        print("set_port =", bool(result))
-
-
-def main():
-    w = NamuhWindow()
-
 
 if __name__ == '__main__':
-    exit(main())
+    w = NamuhWindow()
