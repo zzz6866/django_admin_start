@@ -15,6 +15,7 @@ import threading
 
 from namuh_bot.models import *
 from alldev.settings.base import BASE_DIR
+os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\namuh_bot\bin"])
 
 from ctypes.wintypes import *
 
