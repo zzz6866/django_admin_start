@@ -15,10 +15,10 @@ import threading
 
 from namuh_bot.models import *
 from alldev.settings.base import BASE_DIR
+
 os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\namuh_bot\bin"])
 
 from ctypes.wintypes import *
-
 
 '''
 import socket
@@ -35,18 +35,24 @@ PORT = 10003
 # socket.SOCK_STREAM : TCP 소켓 타입 사용
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# HOST와 PORT로 서버 연결 시도
 client_socket.connect((HOST, PORT))
-# send_json = json.dumps({"reqId": "login", "param": {"sz_id": "start0", "sz_pw": "qpwoei12!", "sz_cert_pw": "ekdnsfhem1!"}})  # sz_id, sz_pw, sz_cert_pw
-send_json = json.dumps({"reqId": "query", "param": {"nTRID": 0, "szTRCode": "c1101", "szInput": "K217620", "nInputLen": 7, "nAccountIndex": 0}})  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
+# HOST와 PORT로 서버 연결 시도
+cmd = "query"
+send_json = None
+if cmd == "login":
+    send_json = json.dumps({"req_id": "login", "param": {"sz_id": "start0", "sz_pw": "qpwoei12!", "sz_cert_pw": "ekdnsfhem1!"}})  # sz_id, sz_pw, sz_cert_pw
+elif cmd == "query":
+    send_json = json.dumps({"req_id": "query", "param": {"nTRID": 1, "szTRCode": "c1101", "szInput": "K 217620 ", "nInputLen": 9, "nAccountIndex": 0}})  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
+elif cmd == "attach":
+    send_json = json.dumps({"req_id": "attach", "param": {"szBCType": "h1", "szInput": "005940", "nCodeLen": 217620, "nInputLen": 6}})  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
 
-# 메시지 전송
-client_socket.sendall(send_json.encode())
+if send_json:
+    # 메시지 전송
+    client_socket.sendall(send_json.encode())
 
-# 메시지 수신
-data = client_socket.recv(1024)
-print('Received : ', repr(data.decode()))
-
+    # 메시지 수신
+    data = client_socket.recv(1024)
+    print('Received : ', repr(data.decode()))
 # 소켓 close
 client_socket.close()
 
@@ -61,6 +67,7 @@ class NamuhWindow:
             # msg_TaskbarRestart: self.OnRestart,
             # win32con.WM_DESTROY: self.OnDestroy,
             CA_WMCAEVENT: self.wnd_proc,
+            CA_RECEIVEERROR: self.wnd_proc,
             win32con.WM_COMMAND: self.on_command,
             ON_TASKBAR_NOTIFY: self.on_taskbar_notify,
         }
@@ -139,14 +146,21 @@ class NamuhWindow:
             print("Goodbye")
             win32gui.PostQuitMessage(0)
             win32gui.DestroyWindow(self.hwnd)
-        if req_id == "login":
+
+        elif req_id == "login":
             print("로그인시도")
             login = param["param"]
             self.wmca.connect(self.hwnd, login["sz_id"], login["sz_pw"], login["sz_cert_pw"])
-            time.sleep(4)
+
         elif req_id == "query":
+            print("시세 조회")
             query = param["param"]
             self.wmca.query(self.hwnd, query["nTRID"], query["szTRCode"], query["szInput"], query["nInputLen"], query["nAccountIndex"])  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
+
+        elif req_id == "attach":
+            print("실시간 시세 조회")
+            query = param["param"]
+            self.wmca.attach(self.hwnd, query["szBCType"], query["szInput"], query["nCodeLen"], query["nInputLen"])  # szBCType, szInput, nCodeLen, nInputLen
 
         return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
 
@@ -161,6 +175,7 @@ class NamuhWindow:
             print("통신 오류 발생")
         elif wParam == CA_RECEIVEDATA:  # 서비스 응답 수신(TR)
             print("서비스 응답 수신(TR)")
+            self.on_wm_receivedata(lParam)
         elif wParam == CA_RECEIVESISE:  # 실시간 데이터 수신(BC)
             print("실시간 데이터 수신(BC)")
         elif wParam == CA_RECEIVEMESSAGE:  # 상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)
@@ -171,8 +186,8 @@ class NamuhWindow:
             print("서비스 처리중 오류 발생 (입력값 오류등)")
         return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
 
-    def on_wm_receivemessage(self, lparam):
-        p_msg = cast(lparam, POINTER(OutdatablockStruct))
+    def on_wm_receivemessage(self, lParam):
+        p_msg = cast(lParam, POINTER(OutdatablockStruct))
         p_msg_header = cast(p_msg.contents.pData.contents.szData, POINTER(MsgHeaderStruct))
         msg_cd = p_msg_header.contents.msg_cd.decode("utf-8")
         user_msg = p_msg_header.contents.user_msg.decode("euc-kr")
@@ -249,6 +264,14 @@ class NamuhWindow:
         # BOOL    wmcaQuery(HWND hWnd, int nTRID, const char* szTRCode, const char* szInput, int nInputLen, int nAccountIndex=0);
         # self.wmca.query(self.hwnd, 0, b"c1101", b"K000000", 7, 0)
 
+    def on_wm_receivedata(self, lParam):  # OnWmReceivedata( (OUTDATABLOCK*)lParam );
+        p_msg = cast(lParam, POINTER(OutdatablockStruct))
+        p_msg_header = cast(p_msg.contents.pData, POINTER(ReceivedStruct))
+        szBlockName = p_msg_header.contents.szBlockName
+        szData = p_msg_header.contents.szData
+        nLen = p_msg_header.contents.nLen
+        print(f"{p_msg.contents.TrIndex} \n\n {szBlockName} \n\n {szData} \n\n {nLen}")
+
 
 class WinDllWmca:
     def __init__(self):
@@ -284,19 +307,19 @@ class WinDllWmca:
         print("query =", bool(result))
 
     def attach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 등록
-        func = self.wmca_dll.wmcaQuery
+        func = self.wmca_dll.wmcaAttach
         # HWND hWnd, const char* szBCType, const char* szInput, int nCodeLen, int nInputLen
         func.argtypes = [HWND, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
-        result = func(hwnd, szBCType, szInput, nCodeLen, nInputLen)
+        result = func(hwnd, szBCType.encode(), szInput.encode(), nCodeLen, nInputLen)
         print("attach =", bool(result))
 
     def detach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 취소
-        func = self.wmca_dll.wmcaQuery
+        func = self.wmca_dll.wmcaDetach
         # HWND hWnd, const char* szBCType, const char* szInput, int nCodeLen, int nInputLen
         func.argtypes = [HWND, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
-        result = func(hwnd, szBCType, szInput, nCodeLen, nInputLen)
+        result = func(hwnd, szBCType.encode(), szInput.encode(), nCodeLen, nInputLen)
         print("detach =", bool(result))
 
     def detach_window(self, hwnd):  # 실시간 일괄 취소
