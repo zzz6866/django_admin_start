@@ -30,8 +30,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_celery_beat',
     'django_celery_results',
-    'torrent_bot.apps.CoinBotConfig',
+    'torrent_bot.apps.TorrentBotConfig',
     'front.apps.FrontConfig',
+    'namuh_bot.apps.NamuhBotConfig',
 ]
 
 MIDDLEWARE = [
@@ -49,8 +50,7 @@ ROOT_URLCONF = 'alldev.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')]
-        ,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

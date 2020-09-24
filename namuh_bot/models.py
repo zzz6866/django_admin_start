@@ -1,13 +1,10 @@
-from ctypes.wintypes import *
 from ctypes import *
-
-from django.core.validators import RegexValidator
+from ctypes.wintypes import *
 from django.db import models
 
-# Create your models here.
-# 단타 도우미 models
-from django.utils import timezone
-
+"""
+AGENT MODEL START
+"""
 # 윈도우 메시지 상수 선언
 DT_SINGLELINE = 32
 DT_CENTER = 1
@@ -48,7 +45,6 @@ MENU_EXIT = 1025
 #     min_limit_now_percent = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')])  # 투자 후 현재 금액(변동)의 손절 마지노선 (%)
 #     max_limit_now_percent = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')])  # 투자 후 현재 금액(변동)의 익절 마지노선 (%)
 
-
 INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
 
 
@@ -66,3 +62,25 @@ class ReceivedStruct(Structure):
 class OutdatablockStruct(Structure):
     _fields_ = [('TrIndex', INT),
                 ('pData', POINTER(ReceivedStruct))]
+
+
+"""
+AGENT MODEL END
+"""
+
+"""
+WEB MODEL START
+"""
+
+
+# 종목코드 모델
+class StockCd(models.Model):
+    # http://kind.krx.co.kr/corpgeneral/corpList.do?method=download (한국 거래소에서 종목 코드 리스트 수집)
+    #     opening_price = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0)
+    cd = models.CharField(max_length=6, primary_key=True)
+    nm = models.CharField(max_length=100)
+
+
+"""
+WEB MODEL END 
+"""
