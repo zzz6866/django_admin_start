@@ -16,13 +16,17 @@ Including another URLconf
 from django.conf import settings
 from django.conf.urls import url, include
 from django.contrib import admin
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, request
+from django.shortcuts import render
 from django.views.static import serve
+
+from front import views
 
 urlpatterns = [
     # path('admin/', admin.site.urls),
     url(r'^static/(?P<path>.*)$', serve, {'document_root': settings.STATIC_ROOT}),  # admin css 등 DEBUG = False 설정시 못가져오는 파일들 셋팅
-    url(r'^$', lambda r: HttpResponseRedirect('admin/')),
+    # url(r'^$', lambda r: HttpResponseRedirect('admin/')),
+    url(r'^$', views.InedxView),
     url(r'^admin/', admin.site.urls),
     # url(r'^coin/', include('coin_bot.urls')), # 미사용 주석처리
     url(r'^torrent/', include('torrent_bot.urls')),
