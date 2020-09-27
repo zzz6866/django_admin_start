@@ -187,3 +187,22 @@ LOGGING = {
         },
     },
 }
+
+# celery Setting
+# Other Django configurations...
+# Celery application definition
+# http://docs.celeryproject.org/en/v4.2.1/userguide/configuration.html
+MONGODB_URL = 'mongodb://alldev:1q2w3e4r@192.168.0.2:27017/alldev'
+
+CELERY_BROKER_URL = MONGODB_URL
+CELERY_RESULT_BACKEND = MONGODB_URL
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'Asia/Seoul'
+# CELERY_TIMEZONE = 'UTC'
+CELERY_ENABLE_UTC = False
+CELERY_MONGODB_BACKEND_SETTINGS = {
+    'database': 'alldev',
+    'taskmeta_collection': 'alldev_taskmeta_collection',
+}
