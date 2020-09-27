@@ -2,10 +2,14 @@
 settings 공통
 """
 
-import os, os.path
+import os.path
+from datetime import timedelta
+
+from celery.schedules import crontab
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # default
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))  # ROOT (settings 나누면서 dirname추가)
 
 # Quick-start development settings - unsuitable for production
@@ -202,7 +206,15 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Seoul'
 # CELERY_TIMEZONE = 'UTC'
 CELERY_ENABLE_UTC = False
-CELERY_MONGODB_BACKEND_SETTINGS = {
-    'database': 'alldev',
-    'taskmeta_collection': 'alldev_taskmeta_collection',
+CELERY_BEAT_SCHEDULE = {
+    'get_stock_cd_list': {
+        'task': 'namuh_bot.tasks.get_stock_cd_list',
+        'schedule': crontab(hour=1),
+        'args': ()
+    },
+    'debug_task': {
+        'task': 'alldev.celery.debug_task',
+        'schedule': timedelta(seconds=5),
+        'args': ()
+    },
 }
