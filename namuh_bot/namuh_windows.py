@@ -1,20 +1,18 @@
 import json
+import os
+import socket
 import sys
-import time
+import threading
 
 import win32api
 import win32con
 import win32gui
-from celery.utils.log import get_task_logger
 
-logger = get_task_logger(__name__)
-
-import os
-import socket
-import threading
-
-from namuh_bot.models import *
 from alldev.settings.base import BASE_DIR
+from namuh_bot.models import *
+
+# from celery.utils.log import get_task_logger
+# logger = get_task_logger(__name__)
 
 os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\namuh_bot\bin"])
 
@@ -61,6 +59,12 @@ client_socket.close()
 
 # Create your tests here.
 class NamuhWindow:
+    sz_id = ""  # 사용자 아이디
+    sz_pw = ""  # 사용자 비밀번호
+    sz_cert_pw = ""  # 공인인증서 비밀번호
+    is_while = False  # 가격 체크를 위한 루프 변수 (True : 실시간 체크, False : 루프 종료)
+    is_hts = True  # 모의투자 여부 (True : 모의투자, False : 실투자)
+
     def __init__(self):
         # message map
         message_map = {
@@ -103,14 +107,15 @@ class NamuhWindow:
         # win32gui.ShowWindow(self.hwnd, SW_SHOWNORMAL)
         win32gui.UpdateWindow(self.hwnd)
 
-        self._DoCreateIcons()  # 트레이 아이콘 생성
+        self.create_tray_icons()  # 트레이 아이콘 생성
 
         self.wmca = WinDllWmca()  # 모바일증권 나무 DLL 로드
         t = threading.Thread(target=self.recive_message)
         t.daemon = True
         t.start()
+        print(self.__class__, " START!")
 
-    def _DoCreateIcons(self):  # 트레이 아이콘 생성
+    def create_tray_icons(self):  # 트레이 아이콘 생성
         # Try and find a custom icon
         hinst = win32api.GetModuleHandle(None)
         iconPathName = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "pyc.ico"))
@@ -142,20 +147,30 @@ class NamuhWindow:
         # req = cast(wParam, c_char_p).value.decode('utf-8')
         param = json.loads(cast(lParam, c_char_p).value.decode('utf-8'))
         req_id = param["req_id"]
-        if message == win32con.WM_DESTROY or wParam == MENU_EXIT or wParam == CA_DISCONNECTED:  # 윈도우 창 닫기 버튼 클릭시 # 접속 끊김
+        if message == win32con.WM_DESTROY or wParam == MENU_EXIT:  # 윈도우 창 닫기 버튼 클릭시 # 접속 끊김
             print("Goodbye")
             win32gui.PostQuitMessage(0)
             win32gui.DestroyWindow(self.hwnd)
 
         elif req_id == "login":
-            print("로그인시도")
+            print("로그인 시도")
             login = param["param"]
-            self.wmca.connect(self.hwnd, login["sz_id"], login["sz_pw"], login["sz_cert_pw"])
+            self.sz_id = login["sz_id"].encode()
+            self.sz_pw = login["sz_pw"].encode()
+            self.sz_cert_pw = login["sz_cert_pw"].encode()
+
+            self.set_is_hts(param["is_hts"])  # 모의투자 or 실투자 변경
+
+            self.wmca.connect(self.hwnd, self.sz_id, self.sz_pw, self.sz_cert_pw)
 
         elif req_id == "query":
             print("시세 조회")
             query = param["param"]
-            self.wmca.query(self.hwnd, query["nTRID"], query["szTRCode"], query["szInput"], query["nInputLen"], query["nAccountIndex"])  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
+
+            if self.wmca.is_connected():
+                self.wmca.query(self.hwnd, query["nTRID"], query["szTRCode"], query["szInput"], query["nInputLen"], query["nAccountIndex"])  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
+            else:
+                print("로그인 되지 않음")  # TODO : 리턴 메시지 작성 필요
 
         elif req_id == "attach":
             print("실시간 시세 조회")
@@ -165,11 +180,12 @@ class NamuhWindow:
         return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
 
     def wnd_proc(self, hwnd, message, wParam, lParam):  # wmca MFC 콜백 처리
-        if wParam == CA_DISCONNECTED:
-            print("Goodbye")
-            win32gui.PostQuitMessage(0)
-            win32gui.DestroyWindow(self.hwnd)
-        elif wParam == CA_CONNECTED:  # 로그인 성공
+        # if wParam == CA_DISCONNECTED:
+        #     print("Goodbye")
+        #     win32gui.PostQuitMessage(0)
+        #     win32gui.DestroyWindow(self.hwnd)
+        # el
+        if wParam == CA_CONNECTED:  # 로그인 성공
             print("로그인 성공")
         elif wParam == CA_SOCKETERROR:  # 통신 오류 발생
             print("통신 오류 발생")
@@ -187,11 +203,14 @@ class NamuhWindow:
         return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
 
     def on_wm_receivemessage(self, lParam):
-        p_msg = cast(lParam, POINTER(OutdatablockStruct))
-        p_msg_header = cast(p_msg.contents.pData.contents.szData, POINTER(MsgHeaderStruct))
-        msg_cd = p_msg_header.contents.msg_cd.decode("utf-8")
-        user_msg = p_msg_header.contents.user_msg.decode("euc-kr")
-        print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.contents.TrIndex, msg_cd, user_msg))
+        try:
+            p_msg = cast(lParam, POINTER(OutdatablockStruct))
+            p_msg_header = cast(p_msg.contents.pData.contents.szData, POINTER(MsgHeaderStruct))
+            msg_cd = p_msg_header.contents.msg_cd.decode("utf-8")
+            user_msg = p_msg_header.contents.user_msg.decode("euc-kr")
+            print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.contents.TrIndex, msg_cd, user_msg))
+        except UnicodeDecodeError as e:
+            print("UnicodeDecodeError = ", e)
 
     def on_taskbar_notify(self, hwnd, msg, wparam, lparam):
         if lparam == win32con.WM_LBUTTONUP:
@@ -213,12 +232,37 @@ class NamuhWindow:
             win32gui.PostMessage(self.hwnd, win32con.WM_NULL, 0, 0)
         return 1
 
+    def set_is_hts(self, is_hts):
+        self.is_hts = is_hts
+
+        if is_hts:  # 모의투자일 경우
+            wmca_server = "newmt.wontrading.com"
+            wmca_port = "8400"
+        else:  # 실투자일 경우
+            wmca_server = "wmca.nhqv.com"
+            wmca_port = "8200"
+
+        import configparser
+        import os
+        import sys
+
+        config = configparser.ConfigParser()
+        config.set("", "server", wmca_server)
+        config.set("", "port", wmca_port)
+        config.set("", "로그사용", "Y")
+        python_exe_path = os.path.dirname(sys.executable)
+        # print(python_exe_path)
+        with open(python_exe_path + '/wmca.ini', 'w') as configfile:  # python.exe 경로에 wmca.ini 생성(해당 경로에서 생성해야 적용됨)
+            config.write(configfile, space_around_delimiters=False)  # space_around_delimiters : 환경변수의 공백여부 (공백이 있을 경우 읽지 못함)
+
+        self.wmca.load()
+
     def recive_message(self):
         # 서버 호스트 : 클라이언트가 접속할 IP
-        HOST = socket.gethostname()
+        sockert_host = socket.gethostname()
 
         # 서버포트 : 클라이언트가 접속할 포트
-        PORT = 10003
+        sockert_port = 10003
 
         # 소켓 객체 생성
         # socket.AF_INET : IPv4 체계 사용
@@ -229,7 +273,7 @@ class NamuhWindow:
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # 인터페이스
-        server_socket.bind((HOST, PORT))
+        server_socket.bind((sockert_host, sockert_port))
 
         # 서버 포트 허용
         server_socket.listen()
@@ -265,12 +309,24 @@ class NamuhWindow:
         # self.wmca.query(self.hwnd, 0, b"c1101", b"K000000", 7, 0)
 
     def on_wm_receivedata(self, lParam):  # OnWmReceivedata( (OUTDATABLOCK*)lParam );
-        p_msg = cast(lParam, POINTER(OutdatablockStruct))
-        p_msg_header = cast(p_msg.contents.pData, POINTER(ReceivedStruct))
-        szBlockName = p_msg_header.contents.szBlockName
-        szData = p_msg_header.contents.szData
-        nLen = p_msg_header.contents.nLen
-        print(f"{p_msg.contents.TrIndex} \n\n {szBlockName} \n\n {szData} \n\n {nLen}")
+        try:
+            p_msg = cast(lParam, POINTER(OutdatablockStruct))
+            p_msg_header = cast(p_msg.contents.pData, POINTER(ReceivedStruct))
+            szBlockName = p_msg_header.contents.szBlockName.decode()
+
+            struct_type = None
+            if szBlockName == "c1101OutBlock":
+                struct_type = POINTER(c1101OutBlockStruct)
+            elif szBlockName == "c1101OutBlock2":
+                struct_type = POINTER(c1101OutBlock2Struct)
+            elif szBlockName == "c1101OutBlock3":
+                struct_type = POINTER(c1101OutBlock3Struct)
+            szData = cast(p_msg_header.contents.szData, struct_type)
+            nLen = p_msg_header.contents.nLen
+
+            print(f"{p_msg.contents.TrIndex}, {szBlockName}, {szData.contents}, {nLen}")
+        except UnicodeDecodeError as e:
+            print("UnicodeDecodeError = ", e)
 
 
 class WinDllWmca:
@@ -281,22 +337,23 @@ class WinDllWmca:
         func = self.wmca_dll.wmcaConnect
         func.argtypes = [HWND, DWORD, CHAR, CHAR, LPSTR, LPSTR, LPSTR]
         func.restype = BOOL
-        result = func(hwnd, CA_WMCAEVENT, b"T", b"W", sz_id.encode(), sz_pw.encode(), sz_cert_pw.encode())
-        print("connect =", bool(result))
+        result = func(hwnd, CA_WMCAEVENT, b"T", b"W", sz_id, sz_pw, sz_cert_pw)
+        # print("connect =", bool(result))
 
     def disconnect(self):  # 접속 해제
         func = self.wmca_dll.wmcaDisconnect
         func.argtypes = []
         func.restype = BOOL
         result = func()
-        print("disconnect =", bool(result))
+        # print("disconnect =", bool(result))
 
     def is_connected(self):  # 접속 여부 확인
         func = self.wmca_dll.wmcaIsConnected
         func.argtypes = []
         func.restype = BOOL
         result = func()
-        print("is_connected =", bool(result))
+        # print("is_connected =", bool(result))
+        return bool(result)
 
     def query(self, hwnd, nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0):  # 서비스(TR) 호출
         func = self.wmca_dll.wmcaQuery
@@ -304,7 +361,7 @@ class WinDllWmca:
         func.argtypes = [HWND, INT, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
         result = func(hwnd, nTRID, szTRCode.encode(), szInput.encode(), nInputLen, nAccountIndex)
-        print("query =", bool(result))
+        # print("query =", bool(result))
 
     def attach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 등록
         func = self.wmca_dll.wmcaAttach
@@ -312,7 +369,7 @@ class WinDllWmca:
         func.argtypes = [HWND, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
         result = func(hwnd, szBCType.encode(), szInput.encode(), nCodeLen, nInputLen)
-        print("attach =", bool(result))
+        # print("attach =", bool(result))
 
     def detach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 취소
         func = self.wmca_dll.wmcaDetach
@@ -320,35 +377,35 @@ class WinDllWmca:
         func.argtypes = [HWND, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
         result = func(hwnd, szBCType.encode(), szInput.encode(), nCodeLen, nInputLen)
-        print("detach =", bool(result))
+        # print("detach =", bool(result))
 
     def detach_window(self, hwnd):  # 실시간 일괄 취소
         func = self.wmca_dll.wmcaDetachWindow
         func.argtypes = [HWND]
         func.restype = BOOL
         result = func(hwnd)
-        print("detach_window =", bool(result))
+        # print("detach_window =", bool(result))
 
     def detach_all(self):  # 실시간 일괄 취소
         func = self.wmca_dll.wmcaDetachAll
         func.argtypes = []
         func.restype = BOOL
         result = func()
-        print("detach_all =", bool(result))
+        # print("detach_all =", bool(result))
 
     def load(self):  # dll 실행
         func = self.wmca_dll.wmcaLoad
         func.argtypes = []
         func.restype = BOOL
         result = func()
-        print("load =", bool(result))
+        # print("load =", bool(result))
 
     def free(self):  # dll 종료
         func = self.wmca_dll.wmcaFree
         func.argtypes = []
         func.restype = BOOL
         result = func()
-        print("free =", bool(result))
+        # print("free =", bool(result))
 
 
 if __name__ == '__main__':
