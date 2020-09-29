@@ -325,8 +325,8 @@ class NamuhWindow:
             nLen = p_msg_header.contents.nLen
 
             print(f"{p_msg.contents.TrIndex}, {szBlockName}, {szData.contents}, {nLen}")
-        except UnicodeDecodeError as e:
-            print("UnicodeDecodeError = ", e)
+        except Exception as e:
+            print("Exception = ", e)
 
 
 class WinDllWmca:
