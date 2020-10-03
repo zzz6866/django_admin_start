@@ -106,8 +106,13 @@ class StructBase(object):
 
     def get_str(self, field_name):
         value = object.__getattribute__(self, field_name)
-        value = value[0:len(value) - 1]
-        return str(value.decode("cp949")).strip()
+        type = None
+        if value[-1:] == " ":
+            type = str
+        elif value[-1:] == "0":
+            type = int
+        value = value[:-1]
+        return type(value.decode("cp949"))
 
 
 # class StructProperty:
