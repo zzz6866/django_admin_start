@@ -144,15 +144,16 @@ class NamuhWindow:
             # TaskbarCreated message.
 
     def on_command(self, hwnd, message, wParam, lParam):
-        # req = cast(wParam, c_char_p).value.decode('utf-8')
-        param = json.loads(cast(lParam, c_char_p).value.decode('utf-8'))
-        req_id = param["req_id"]
         if message == win32con.WM_DESTROY or wParam == MENU_EXIT:  # 윈도우 창 닫기 버튼 클릭시 # 접속 끊김
             print("Goodbye")
             win32gui.PostQuitMessage(0)
             win32gui.DestroyWindow(self.hwnd)
+            return 1
 
-        elif req_id == "login":
+        param = json.loads(cast(lParam, c_char_p).value.decode('utf-8'))
+        req_id = param["req_id"]
+
+        if req_id == "login":
             print("로그인 시도")
             login = param["param"]
             self.sz_id = login["sz_id"].encode()
@@ -175,6 +176,7 @@ class NamuhWindow:
         elif req_id == "attach":
             print("실시간 시세 조회")
             query = param["param"]
+            self.wmca.detach_all()
             self.wmca.attach(self.hwnd, query["szBCType"], query["szInput"], query["nCodeLen"], query["nInputLen"])  # szBCType, szInput, nCodeLen, nInputLen
 
         return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
@@ -204,13 +206,15 @@ class NamuhWindow:
 
     def on_wm_receivemessage(self, lParam):
         try:
-            p_msg = cast(lParam, POINTER(OutdatablockStruct))
-            p_msg_header = cast(p_msg.contents.pData.contents.szData, POINTER(MsgHeaderStruct))
-            msg_cd = p_msg_header.contents.msg_cd.decode("utf-8")
-            user_msg = p_msg_header.contents.user_msg.decode("euc-kr")
-            print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.contents.TrIndex, msg_cd, user_msg))
-        except UnicodeDecodeError as e:
-            print("UnicodeDecodeError = ", e)
+            p_msg = OutdatablockStruct.from_address(lParam)
+            pData = ReceivedStruct.from_buffer(p_msg.pData.contents)
+            string_buffer = create_string_buffer(pData.szData[:85], 85)
+            msg_header = MsgHeaderStruct.from_buffer(string_buffer)
+            msg_cd = msg_header.msg_cd.decode("cp949")
+            user_msg = msg_header.user_msg.decode("cp949")
+            print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.TrIndex, msg_cd, user_msg))
+        except Exception as e:
+            print("on_wm_receivemessage Exception = ", e)
 
     def on_taskbar_notify(self, hwnd, msg, wparam, lparam):
         if lparam == win32con.WM_LBUTTONUP:
@@ -251,7 +255,7 @@ class NamuhWindow:
         config.set("", "port", wmca_port)
         config.set("", "로그사용", "Y")
         python_exe_path = os.path.dirname(sys.executable)
-        # print(python_exe_path)
+        print(python_exe_path)
         with open(python_exe_path + '/wmca.ini', 'w') as configfile:  # python.exe 경로에 wmca.ini 생성(해당 경로에서 생성해야 적용됨)
             config.write(configfile, space_around_delimiters=False)  # space_around_delimiters : 환경변수의 공백여부 (공백이 있을 경우 읽지 못함)
 
@@ -277,31 +281,35 @@ class NamuhWindow:
 
         # 서버 포트 허용
         server_socket.listen()
+        print("wait connect : " + str(sockert_port))
 
+        client_socket, addr = server_socket.accept()
         try:
-            # 메시지 무제한 수신을 위한 무한루프
-            while True:
+            while True:  # 메시지 무제한 수신을 위한 무한루프
                 # 통신 대기 및 클라이언트 소켓 리턴
-                client_socket, addr = server_socket.accept()
-                print('Connected by', addr)
+                print("Connected by", addr)
 
                 # 메시지 버퍼 크기 지정
                 data = client_socket.recv(1024)
 
-                # 메시지 출력
-                print('Received from', addr, json.loads(data.decode()))
+                if len(data) == 0:
+                    break
+                else:
+                    # 메시지 출력
+                    print('Received from', addr, json.loads(data.decode()))
 
-                self.request_query(data)
+                    self.request_query(data)
 
-                # 받은 메시지 재전송(메시지 반환)
-                client_socket.sendall(data)
-                # 소켓 close
-                client_socket.close()
+                    # 받은 메시지 재전송(메시지 반환)
+                    client_socket.sendall(data)
+
         except Exception as error:
             print("socket recived message error : ", error)
         finally:
             # 소켓 close
+            client_socket.close()
             server_socket.close()
+            self.recive_message()
 
     def request_query(self, param):  # 증권사에 정보 조회
         win32gui.PostMessage(self.hwnd, win32con.WM_COMMAND, 0, param)
@@ -310,23 +318,34 @@ class NamuhWindow:
 
     def on_wm_receivedata(self, lParam):  # OnWmReceivedata( (OUTDATABLOCK*)lParam );
         try:
-            p_msg = cast(lParam, POINTER(OutdatablockStruct))
-            p_msg_header = cast(p_msg.contents.pData, POINTER(ReceivedStruct))
-            szBlockName = p_msg_header.contents.szBlockName.decode()
+            p_msg = OutdatablockStruct.from_address(lParam)
+            pData = ReceivedStruct.from_buffer(p_msg.pData.contents)
+            nLen = pData.nLen
+            string_buffer = create_string_buffer(pData.szData[:nLen], nLen)
+            szBlockName = pData.szBlockName.decode("cp949")
+
 
             struct_type = None
             if szBlockName == "c1101OutBlock":
-                struct_type = POINTER(c1101OutBlockStruct)
+                struct_type = c1101OutBlockStruct
             elif szBlockName == "c1101OutBlock2":
-                struct_type = POINTER(c1101OutBlock2Struct)
+                struct_type = c1101OutBlock2Struct
             elif szBlockName == "c1101OutBlock3":
-                struct_type = POINTER(c1101OutBlock3Struct)
-            szData = cast(p_msg_header.contents.szData, struct_type)
-            nLen = p_msg_header.contents.nLen
+                struct_type = c1101OutBlock3Struct
+            elif szBlockName == "c4113OutKospi200":
+                struct_type = c4113OutKospi200Struct
+            elif szBlockName == "p1005OutBlock":
+                struct_type = p1005OutBlockStruct
 
-            print(f"{p_msg.contents.TrIndex}, {szBlockName}, {szData.contents}, {nLen}")
+            szData = struct_type.from_buffer(string_buffer)
+
+            # print(f"{p_msg.TrIndex}, {szBlockName}, {nLen}, {repr(szData)}")
+            # print(repr(szData))
+            # if szBlockName == "c1101OutBlock":
+            #     print("'" + szData.get_str("code") + "'")
+            #     print("'" + szData.get_str("hname") + "'")
         except Exception as e:
-            print("Exception = ", e)
+            print("on_wm_receivedata Exception = ", e)
 
 
 class WinDllWmca:
