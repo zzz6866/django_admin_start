@@ -107,9 +107,9 @@ class StructBase(object):
     def get_str(self, field_name):
         value = object.__getattribute__(self, field_name)
         type = None
-        if value[-1:] == " ":
+        if value[-1:] == b" ":
             type = str
-        elif value[-1:] == "0":
+        elif value[-1:] == b"0":
             type = int
         value = value[:-1]
         return type(value.decode("cp949"))

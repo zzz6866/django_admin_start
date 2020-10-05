@@ -327,19 +327,19 @@ class NamuhWindow:
 
             struct_type = None
             if szBlockName == "c1101OutBlock":
-                struct_type = c1101OutBlockStruct
+                struct_type = (c1101OutBlockStruct * 1)
             elif szBlockName == "c1101OutBlock2":
-                struct_type = c1101OutBlock2Struct
+                struct_type = (c1101OutBlock2Struct * (nLen // sizeof(c1101OutBlock2Struct)))
             elif szBlockName == "c1101OutBlock3":
-                struct_type = c1101OutBlock3Struct
+                struct_type = (c1101OutBlock3Struct * 1)
             elif szBlockName == "c4113OutKospi200":
-                struct_type = c4113OutKospi200Struct
+                struct_type = (c4113OutKospi200Struct * 1)
             elif szBlockName == "p1005OutBlock":
-                struct_type = p1005OutBlockStruct
+                struct_type = (p1005OutBlockStruct * (nLen // sizeof(p1005OutBlockStruct)))
 
             szData = struct_type.from_buffer(string_buffer)
 
-            # print(f"{p_msg.TrIndex}, {szBlockName}, {nLen}, {repr(szData)}")
+            # print(f"{p_msg.TrIndex}, {szBlockName}, {nLen}, {repr(szData[:])}")
             # print(repr(szData))
             # if szBlockName == "c1101OutBlock":
             #     print("'" + szData.get_str("code") + "'")
