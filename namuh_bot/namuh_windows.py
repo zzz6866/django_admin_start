@@ -9,52 +9,11 @@ import win32con
 import win32gui
 
 from alldev.settings.base import BASE_DIR
-from namuh_bot.models import *
-
-# from celery.utils.log import get_task_logger
-# logger = get_task_logger(__name__)
+from namuh_bot.namuh_structure import *
 
 os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\namuh_bot\bin"])
 
 from ctypes.wintypes import *
-
-'''
-import socket
-import json
-
-# 서버 호스트 : 클라이언트가 접속할 IP
-HOST = socket.gethostname()
-
-# 서버포트 : 클라이언트가 접속할 포트
-PORT = 10003
-
-# 소켓 객체 생성
-# socket.AF_INET : IPv4 체계 사용
-# socket.SOCK_STREAM : TCP 소켓 타입 사용
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-client_socket.connect((HOST, PORT))
-# HOST와 PORT로 서버 연결 시도
-cmd = "query"
-send_json = None
-if cmd == "login":
-    send_json = json.dumps({"req_id": "login", "param": {"sz_id": "start0", "sz_pw": "qpwoei12!", "sz_cert_pw": "ekdnsfhem1!"}})  # sz_id, sz_pw, sz_cert_pw
-elif cmd == "query":
-    send_json = json.dumps({"req_id": "query", "param": {"nTRID": 1, "szTRCode": "c1101", "szInput": "K 217620 ", "nInputLen": 9, "nAccountIndex": 0}})  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
-elif cmd == "attach":
-    send_json = json.dumps({"req_id": "attach", "param": {"szBCType": "h1", "szInput": "005940", "nCodeLen": 217620, "nInputLen": 6}})  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
-
-if send_json:
-    # 메시지 전송
-    client_socket.sendall(send_json.encode())
-
-    # 메시지 수신
-    data = client_socket.recv(1024)
-    print('Received : ', repr(data.decode()))
-# 소켓 close
-client_socket.close()
-
-'''
 
 
 # Create your tests here.
@@ -64,6 +23,7 @@ class NamuhWindow:
     sz_cert_pw = ""  # 공인인증서 비밀번호
     is_while = False  # 가격 체크를 위한 루프 변수 (True : 실시간 체크, False : 루프 종료)
     is_hts = True  # 모의투자 여부 (True : 모의투자, False : 실투자)
+    client_socket = None  # 클라이언트 소켓 메시지 리턴을 위한 정보
 
     def __init__(self):
         # message map
@@ -196,6 +156,7 @@ class NamuhWindow:
             self.on_wm_receivedata(lParam)
         elif wParam == CA_RECEIVESISE:  # 실시간 데이터 수신(BC)
             print("실시간 데이터 수신(BC)")
+            self.on_wm_receivesise(lParam)
         elif wParam == CA_RECEIVEMESSAGE:  # 상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)
             self.on_wm_receivemessage(lParam)
         elif wParam == CA_RECEIVECOMPLETE:  # 서비스 처리 완료
@@ -283,14 +244,14 @@ class NamuhWindow:
         server_socket.listen()
         print("wait connect : " + str(sockert_port))
 
-        client_socket, addr = server_socket.accept()
+        self.client_socket, addr = server_socket.accept()
         try:
             while True:  # 메시지 무제한 수신을 위한 무한루프
                 # 통신 대기 및 클라이언트 소켓 리턴
                 print("Connected by", addr)
 
                 # 메시지 버퍼 크기 지정
-                data = client_socket.recv(1024)
+                data = self.client_socket.recv(1024)
 
                 if len(data) == 0:
                     break
@@ -301,13 +262,13 @@ class NamuhWindow:
                     self.request_query(data)
 
                     # 받은 메시지 재전송(메시지 반환)
-                    client_socket.sendall(data)
+                    self.client_socket.sendall(data)
 
         except Exception as error:
             print("socket recived message error : ", error)
         finally:
             # 소켓 close
-            client_socket.close()
+            self.client_socket.close()
             server_socket.close()
             self.recive_message()
 
@@ -323,7 +284,6 @@ class NamuhWindow:
             nLen = pData.nLen
             string_buffer = create_string_buffer(pData.szData[:nLen], nLen)
             szBlockName = pData.szBlockName.decode("cp949")
-
 
             struct_type = None
             if szBlockName == "c1101OutBlock":
@@ -344,8 +304,34 @@ class NamuhWindow:
             # if szBlockName == "c1101OutBlock":
             #     print("'" + szData.get_str("code") + "'")
             #     print("'" + szData.get_str("hname") + "'")
+            json_list = []
+            json_list.extend(data.getdict() for data in szData)
+            json_data = json.dumps(json_list)
+            # print(json_data)
+            if not self.client_socket._closed:  # 클라이언트 소켓이 안끊어졌을 경우 메시지 전송
+                self.client_socket.sendall(json_data.encode())
+
+            return szData
         except Exception as e:
             print("on_wm_receivedata Exception = ", e)
+
+    def on_wm_receivesise(self, lParam):
+        try:
+            p_msg = OutdatablockStruct.from_address(lParam)
+            pData = ReceivedStruct.from_buffer(p_msg.pData.contents)
+            p_sise_data = None
+            string_buffer = create_string_buffer(pData.szData, pData.nLen)
+            if pData.szBlockName[:2] == b"j8":  # 코스피 주식 현재가(실시간) 수신
+                p_sise_data = j8OutBlockStruct.from_buffer(string_buffer, 3)
+            elif pData.szBlockName[:2] == b"d2":  # 실시간 체결통보 => 실시간 체결통보는 별도로 Attach()함수를 호출하지 않아도 자동 수신
+                p_sise_data = d2OutBlockStruct.from_buffer(string_buffer, 3)
+            elif pData.szBlockName[:2] == b"d3":  # 실시간 체결통보 => 실시간 체결통보는 별도로 Attach()함수를 호출하지 않아도 자동 수신
+                p_sise_data = d3OutBlockStruct.from_buffer(string_buffer, 3)
+
+            print(f"{pData.szBlockName[:2]} : {repr(p_sise_data)}")
+
+        except Exception as e:
+            print("on_wm_receivesise Exception = ", e)
 
 
 class WinDllWmca:
