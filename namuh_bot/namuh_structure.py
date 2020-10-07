@@ -116,10 +116,10 @@ class StructByteBase(StructBase):  # 데이터 구조체가 +1byte 추가된 경
     def get_str(self, field_name):
         value = object.__getattribute__(self, field_name)
         if len(value) > 0:
-            if value[-1:] == b" ":  # 끝이 공백 일 경우 문자열 -1 제거 후 반환
+            if value[:-1].decode("cp949").isdigit() and value[-1:] != b" ":
+                return int(value[:-1].decode("cp949"))
+            else:  # if value[-1:] == b" ":  # 끝이 공백 일 경우 문자열 -1 제거 후 반환
                 return str(value[:-1].decode("cp949")).strip()
-            else:
-                return value[:-1].decode("cp949")
         else:  # 0byte일 경우 공백 반환
             return ""
 
@@ -153,7 +153,7 @@ class OutdatablockStruct(LittleEndianStructure, StructBase):
                 ]
 
 
-class c1101OutBlockStruct(LittleEndianStructure, StructByteBase):
+class C1101OutBlockStruct(LittleEndianStructure, StructByteBase):
     _pack_ = 1
     _fields_ = [("code", CHAR * (6 + 1)),  # 종목코드
                 ("hname", CHAR * (13 + 1)),  # 종목명
@@ -326,7 +326,7 @@ class c1101OutBlockStruct(LittleEndianStructure, StructByteBase):
                 ]
 
 
-class c1101OutBlock2Struct(LittleEndianStructure, StructByteBase):
+class C1101OutBlock2Struct(LittleEndianStructure, StructByteBase):
     _pack_ = 1
     _fields_ = [("time", CHAR * (8 + 1)),  # 시간
                 ("price", CHAR * (7 + 1)),  # 현재가
@@ -339,7 +339,7 @@ class c1101OutBlock2Struct(LittleEndianStructure, StructByteBase):
                 ]
 
 
-class c1101OutBlock3Struct(LittleEndianStructure, StructByteBase):
+class C1101OutBlock3Struct(LittleEndianStructure, StructByteBase):
     _pack_ = 1
     _fields_ = [("dongsi", CHAR * (1 + 1)),  # 동시호가구분
                 ("jeqprice", CHAR * (7 + 1)),  # 예상체결가
@@ -359,7 +359,7 @@ class c1101OutBlock3Struct(LittleEndianStructure, StructByteBase):
                 ]
 
 
-class c4113OutKospi200Struct(LittleEndianStructure, StructBase):
+class C4113OutKospi200Struct(LittleEndianStructure, StructBase):
     _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [("fuitem", CHAR * (8 + 1)),  # 종목코드
                 ("fucurr", CHAR * (5 + 1)),  # 현물지수
@@ -372,7 +372,7 @@ class c4113OutKospi200Struct(LittleEndianStructure, StructBase):
                 ]
 
 
-class p1005OutBlockStruct(LittleEndianStructure, StructByteBase):
+class P1005OutBlockStruct(LittleEndianStructure, StructByteBase):
     _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("code", CHAR * (6 + 1)),  # 단축코드
@@ -381,7 +381,7 @@ class p1005OutBlockStruct(LittleEndianStructure, StructByteBase):
     ]
 
 
-class j8OutBlockStruct(LittleEndianStructure, StructBase):
+class J8OutBlockStruct(LittleEndianStructure, StructBase):
     _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("code", (CHAR * 6)),  # 종목코드
@@ -404,7 +404,7 @@ class j8OutBlockStruct(LittleEndianStructure, StructBase):
     ]
 
 
-class k8OutBlockStruct(LittleEndianStructure, StructBase):
+class K8OutBlockStruct(LittleEndianStructure, StructBase):
     _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("code", (CHAR * 6)),  # 종목코드
@@ -427,7 +427,7 @@ class k8OutBlockStruct(LittleEndianStructure, StructBase):
     ]
 
 
-class d2OutBlockStruct(LittleEndianStructure, StructBase):
+class D2OutBlockStruct(LittleEndianStructure, StructBase):
     _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("userid", (CHAR * 8)),  # 사용자ID
@@ -449,7 +449,7 @@ class d2OutBlockStruct(LittleEndianStructure, StructBase):
     ]
 
 
-class d3OutBlockStruct(LittleEndianStructure, StructBase):
+class D3OutBlockStruct(LittleEndianStructure, StructBase):
     _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("userid", (CHAR * 8)),  # USERID

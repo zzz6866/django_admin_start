@@ -134,16 +134,19 @@ class NamuhWindow:
                 print("로그인 되지 않음")  # TODO : 리턴 메시지 작성 필요
 
         elif req_id == "attach":
-            print("실시간 시세 조회")
             query = param["param"]
             self.wmca.detach_all()
-            self.wmca.attach(self.hwnd, query["szBCType"], query["szInput"], query["nCodeLen"], query["nInputLen"])  # szBCType, szInput, nCodeLen, nInputLen
+            result = self.wmca.attach(self.hwnd, query["szBCType"], query["szInput"], query["nCodeLen"], query["nInputLen"])  # szBCType, szInput, nCodeLen, nInputLen
+            print("실시간 시세 조회 = ", result)
+
+        elif req_id == "detach_all":
+            print("실시간 일괄 취소 = ", self.wmca.detach_all())
 
         return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
 
     def wnd_proc(self, hwnd, message, wParam, lParam):  # wmca MFC 콜백 처리
         # if wParam == CA_DISCONNECTED:
-        #     print("Goodbye")
+        #     print("Goodbye")/
         #     win32gui.PostQuitMessage(0)
         #     win32gui.DestroyWindow(self.hwnd)
         # el
@@ -287,15 +290,15 @@ class NamuhWindow:
 
             struct_type = None
             if szBlockName == "c1101OutBlock":
-                struct_type = (c1101OutBlockStruct * 1)
+                struct_type = (C1101OutBlockStruct * 1)
             elif szBlockName == "c1101OutBlock2":
-                struct_type = (c1101OutBlock2Struct * (nLen // sizeof(c1101OutBlock2Struct)))
+                struct_type = (C1101OutBlock2Struct * (nLen // sizeof(C1101OutBlock2Struct)))
             elif szBlockName == "c1101OutBlock3":
-                struct_type = (c1101OutBlock3Struct * 1)
+                struct_type = (C1101OutBlock3Struct * 1)
             elif szBlockName == "c4113OutKospi200":
-                struct_type = (c4113OutKospi200Struct * 1)
+                struct_type = (C4113OutKospi200Struct * 1)
             elif szBlockName == "p1005OutBlock":
-                struct_type = (p1005OutBlockStruct * (nLen // sizeof(p1005OutBlockStruct)))
+                struct_type = (P1005OutBlockStruct * (nLen // sizeof(P1005OutBlockStruct)))
 
             szData = struct_type.from_buffer(string_buffer)
 
@@ -307,7 +310,7 @@ class NamuhWindow:
             json_list = []
             json_list.extend(data.getdict() for data in szData)
             json_data = json.dumps(json_list)
-            # print(json_data)
+            print(json_data)
             if not self.client_socket._closed:  # 클라이언트 소켓이 안끊어졌을 경우 메시지 전송
                 self.client_socket.sendall(json_data.encode())
 
@@ -322,11 +325,11 @@ class NamuhWindow:
             p_sise_data = None
             string_buffer = create_string_buffer(pData.szData, pData.nLen)
             if pData.szBlockName[:2] == b"j8":  # 코스피 주식 현재가(실시간) 수신
-                p_sise_data = j8OutBlockStruct.from_buffer(string_buffer, 3)
+                p_sise_data = J8OutBlockStruct.from_buffer(string_buffer, 3)
             elif pData.szBlockName[:2] == b"d2":  # 실시간 체결통보 => 실시간 체결통보는 별도로 Attach()함수를 호출하지 않아도 자동 수신
-                p_sise_data = d2OutBlockStruct.from_buffer(string_buffer, 3)
+                p_sise_data = D2OutBlockStruct.from_buffer(string_buffer, 3)
             elif pData.szBlockName[:2] == b"d3":  # 실시간 체결통보 => 실시간 체결통보는 별도로 Attach()함수를 호출하지 않아도 자동 수신
-                p_sise_data = d3OutBlockStruct.from_buffer(string_buffer, 3)
+                p_sise_data = D3OutBlockStruct.from_buffer(string_buffer, 3)
 
             print(f"{pData.szBlockName[:2]} : {repr(p_sise_data)}")
 
@@ -344,6 +347,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func(hwnd, CA_WMCAEVENT, b"T", b"W", sz_id, sz_pw, sz_cert_pw)
         # print("connect =", bool(result))
+        return bool(result)
 
     def disconnect(self):  # 접속 해제
         func = self.wmca_dll.wmcaDisconnect
@@ -351,6 +355,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func()
         # print("disconnect =", bool(result))
+        return bool(result)
 
     def is_connected(self):  # 접속 여부 확인
         func = self.wmca_dll.wmcaIsConnected
@@ -367,6 +372,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func(hwnd, nTRID, szTRCode.encode(), szInput.encode(), nInputLen, nAccountIndex)
         # print("query =", bool(result))
+        return bool(result)
 
     def attach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 등록
         func = self.wmca_dll.wmcaAttach
@@ -375,6 +381,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func(hwnd, szBCType.encode(), szInput.encode(), nCodeLen, nInputLen)
         # print("attach =", bool(result))
+        return bool(result)
 
     def detach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 취소
         func = self.wmca_dll.wmcaDetach
@@ -383,6 +390,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func(hwnd, szBCType.encode(), szInput.encode(), nCodeLen, nInputLen)
         # print("detach =", bool(result))
+        return bool(result)
 
     def detach_window(self, hwnd):  # 실시간 일괄 취소
         func = self.wmca_dll.wmcaDetachWindow
@@ -390,6 +398,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func(hwnd)
         # print("detach_window =", bool(result))
+        return bool(result)
 
     def detach_all(self):  # 실시간 일괄 취소
         func = self.wmca_dll.wmcaDetachAll
@@ -397,6 +406,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func()
         # print("detach_all =", bool(result))
+        return bool(result)
 
     def load(self):  # dll 실행
         func = self.wmca_dll.wmcaLoad
@@ -404,6 +414,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func()
         # print("load =", bool(result))
+        return bool(result)
 
     def free(self):  # dll 종료
         func = self.wmca_dll.wmcaFree
@@ -411,6 +422,7 @@ class WinDllWmca:
         func.restype = BOOL
         result = func()
         # print("free =", bool(result))
+        return bool(result)
 
 
 if __name__ == '__main__':
