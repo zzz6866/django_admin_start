@@ -5,6 +5,8 @@ from django.utils import timezone
 from namuh_bot.namuh_windows import NamuhWindow
 
 
+# django 설정 사용 가능 class
+# python manage.py namuh_command
 class Command(BaseCommand):
     help = 'Displays current time'
 
