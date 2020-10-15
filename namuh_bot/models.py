@@ -11,8 +11,8 @@ class StockCd(models.Model):
 
 # 명령어 코드 모델
 class StockStrategyBaseCd(models.Model):
-    cmd = models.CharField(max_length=6, null=False)  # 명령어 코드
-    prnt_cmd = models.ForeignKey('self', on_delete=models.SET_NULL)
+    cmd = models.CharField(max_length=6, null=False, unique=True)  # 명령어 코드
+    prnt_cmd = models.ForeignKey('self', on_delete=models.CASCADE, blank=True, null=True, to_field='cmd')
     level = models.SmallIntegerField(null=False)  # 명령어 레벨
     required = models.BooleanField(null=True)  # 필수여부
     comment = models.TextField()
@@ -20,6 +20,6 @@ class StockStrategyBaseCd(models.Model):
 
 # 명령어에 대한 변수값 저장
 class StockStrategyParam(models.Model):
-    base_cmd = models.ForeignKey(StockStrategyBaseCd.cmd, on_delete=models.CASCADE)  # 명령어 코드
+    base_cmd = models.ForeignKey(StockStrategyBaseCd, on_delete=models.CASCADE)  # 명령어 코드
     key = models.CharField(max_length=20, null=False)  # 변수명
     value = models.CharField(max_length=50, null=False)  # 변수 값
