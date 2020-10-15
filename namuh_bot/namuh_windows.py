@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import os
 import socket
@@ -423,3 +424,8 @@ class WinDllWmca:
         result = func()
         # print("free =", bool(result))
         return bool(result)
+
+
+if __name__ == '__main__':
+    w = NamuhWindow()
+    win32gui.PumpMessages()  # MFC 메시지 수집

@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 import socket
 import json
 
 # 테스트용 소켓 클라이언트 (종료시까지 대화형으로 가능)
 
 # 서버 호스트 : 클라이언트가 접속할 IP
-HOST = socket.gethostname()
+HOST = "192.168.0.2"
 
 # 서버포트 : 클라이언트가 접속할 포트
 PORT = 10003

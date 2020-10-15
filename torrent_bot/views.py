@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 
 from celery.utils.log import get_task_logger
