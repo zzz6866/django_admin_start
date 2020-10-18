@@ -178,6 +178,7 @@ class NamuhWindow:
             msg_cd = msg_header.msg_cd.decode("cp949")
             user_msg = msg_header.user_msg.decode("cp949")
             print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.TrIndex, msg_cd, user_msg))
+            self.client_socket.sendall(user_msg.encode())
         except Exception as e:
             print("on_wm_receivemessage Exception = ", e)
 
@@ -266,7 +267,7 @@ class NamuhWindow:
                     self.request_query(data)
 
                     # 받은 메시지 재전송(메시지 반환)
-                    self.client_socket.sendall(data)
+                    # self.client_socket.sendall(data)
 
         except Exception as error:
             print("socket recived message error : ", error)
@@ -312,8 +313,7 @@ class NamuhWindow:
             json_list.extend(data.getdict() for data in szData)
             json_data = json.dumps(json_list)
             print(json_data)
-            if not self.client_socket._closed:  # 클라이언트 소켓이 안끊어졌을 경우 메시지 전송
-                self.client_socket.sendall(json_data.encode())
+            self.client_socket.sendall(json_data.encode())
 
             return szData
         except Exception as e:
