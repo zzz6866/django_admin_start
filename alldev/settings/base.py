@@ -36,6 +36,7 @@ INSTALLED_APPS = [
     'torrent_bot.apps.TorrentBotConfig',
     'front.apps.FrontConfig',
     'namuh_bot.apps.NamuhBotConfig',
+    'mptt',
 ]
 
 MIDDLEWARE = [

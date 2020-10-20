@@ -121,7 +121,7 @@ class NamuhWindow:
             self.sz_pw = login["sz_pw"].encode()
             self.sz_cert_pw = login["sz_cert_pw"].encode()
 
-            self.set_is_hts(param["is_hts"])  # 모의투자 or 실투자 변경
+            self.set_is_hts(login["is_hts"])  # 모의투자 or 실투자 변경
 
             self.wmca.connect(self.hwnd, self.sz_id, self.sz_pw, self.sz_cert_pw)
 

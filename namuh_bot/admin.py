@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
+from mptt.admin import DraggableMPTTAdmin
+
 from .models import *
 
 
@@ -12,9 +14,28 @@ class StockCdAdmin(admin.ModelAdmin):
 
 
 @admin.register(StockCmdBaseCd)
-class StockCmdBaseCdAdmin(admin.ModelAdmin):
-    list_display = ['cmd', 'prnt_cmd', 'level', 'required']
-    list_display_links = ['cmd', 'prnt_cmd', 'level', 'required']
+class StockCmdBaseCdAdmin(DraggableMPTTAdmin):
+    list_display = ['tree_actions', 'indented_name', 'cmd', 'comment']
+    list_display_links = ['indented_name']
+
+    def indented_name(self, instance):  # 하위 코드 들여쓰기 재정의
+        from django.utils.html import format_html
+        return format_html(
+            '<div style="text-indent:{}px">{}</div>',
+            instance._mpttfield('level') * self.mptt_level_indent,
+            instance.name,  # Or whatever you want to put here
+        )
+
+    indented_name.short_description = '명칭'
 
 
-admin.site.register(StockCmdParam)
+@admin.register(StockCmdParam)
+class StockCmdParamAdmin(admin.ModelAdmin):
+    list_display = ['parent_cmd', 'val']
+    list_display_links = ['parent_cmd']
+
+
+@admin.register(StockProcess)
+class StockProcessAdmin(admin.ModelAdmin):
+    list_display = ['name']
+    list_display_links = ['name']

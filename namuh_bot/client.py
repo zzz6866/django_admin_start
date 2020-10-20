@@ -22,7 +22,7 @@ try:
         cmd = input(">>>>")
         send_json = None
         if cmd == "1":
-            send_json = json.dumps({"req_id": "login", "is_hts": True, "param": {"sz_id": "start0", "sz_pw": "qpwoei12!", "sz_cert_pw": "ekdnsfhem1!"}})  # sz_id, sz_pw, sz_cert_pw
+            send_json = json.dumps({"req_id": "login", "param": {"is_hts": True, "sz_id": "start0", "sz_pw": "qpwoei12!", "sz_cert_pw": "ekdnsfhem1!"}})  # sz_id, sz_pw, sz_cert_pw
         elif cmd == "2":
             send_json = json.dumps({"req_id": "query", "param": {"nTRID": 1, "szTRCode": "c1101", "szInput": "K 000120 ", "nInputLen": 8, "nAccountIndex": 0}})  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
         elif cmd == "3":
