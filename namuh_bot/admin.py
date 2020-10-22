@@ -35,7 +35,7 @@ class StockCmdParamAdmin(admin.ModelAdmin):
     list_display_links = ['parent_cmd']
 
 
-@admin.register(StockProcess)
+@admin.register(StockProc)
 class StockProcessAdmin(admin.ModelAdmin):
     list_display = ['name']
     list_display_links = ['name']
