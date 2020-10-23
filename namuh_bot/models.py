@@ -59,7 +59,7 @@ class StockProc(models.Model):
 
 
 class StockProcDtl(models.Model):
-    parent = models.ManyToManyField(StockProc, blank=True, null=True, verbose_name='상위 번호')
+    parent = models.ManyToManyField(StockProc, verbose_name='상위 번호')
     parent_cmd = models.ForeignKey(StockCmdBaseCd, blank=True, null=True, on_delete=models.CASCADE, verbose_name='상위 명령어')
 
 
