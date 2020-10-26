@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
+from django import forms
 from django.contrib import admin
-from mptt.admin import DraggableMPTTAdmin
 
 from .models import *
 
@@ -13,29 +13,101 @@ class StockCdAdmin(admin.ModelAdmin):
     list_display_links = ['cd', 'nm']
 
 
-@admin.register(StockCmdBaseCd)
-class StockCmdBaseCdAdmin(DraggableMPTTAdmin):
-    list_display = ['tree_actions', 'indented_name', 'cmd', 'comment']
-    list_display_links = ['indented_name']
+class SelectOptionAddAttribute(forms.Select):  # select option 태그에 attr 추가 되도록 재정의
+    def __init__(self, attrs=None, choices=(), option_attrs=None):
+        if option_attrs is None:
+            option_attrs = {}
+        self.option_attrs = option_attrs
+        super().__init__(attrs, choices)
 
-    def indented_name(self, instance):  # 하위 코드 들여쓰기 재정의
-        from django.utils.html import format_html
-        return format_html(
-            '<div style="text-indent:{}px">{}</div>',
-            instance._mpttfield('level') * self.mptt_level_indent,
-            instance.name,  # Or whatever you want to put here
-        )
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        index = str(index) if subindex is None else "%s_%s" % (index, subindex)
+        if attrs is None:
+            attrs = {}
+        option_attrs = self.build_attrs(self.attrs, attrs) if self.option_inherits_attrs else {}
+        if selected:
+            option_attrs.update(self.checked_attribute)
+        if 'id' in option_attrs:
+            option_attrs['id'] = self.id_for_label(option_attrs['id'], index)
 
-    indented_name.short_description = '명칭'
+        # setting the attributes here for the option
+        if len(self.option_attrs) > 0:
+            if value in self.option_attrs:
+                custom_attr = self.option_attrs[value]
+                for k, v in custom_attr.items():
+                    option_attrs.update({k: v})
+
+        return {
+            'name': name,
+            'value': value,
+            'label': label,
+            'selected': selected,
+            'index': index,
+            'attrs': option_attrs,
+            'type': self.input_type,
+            'template_name': self.option_template_name,
+        }
 
 
-@admin.register(StockCmdParam)
-class StockCmdParamAdmin(admin.ModelAdmin):
-    list_display = ['parent_cmd', 'val']
-    list_display_links = ['parent_cmd']
+class StockProcDtlForm(forms.ModelForm):
+    CHOICES_CMD = (
+        ('query', '일회성 조회'),
+        ('attach', '실시간 조회'),
+        ('connect', '로그인'),
+        ('disconnect', '로그아웃'),
+    )
+
+    CHOICES_KEY = (
+        ('is_hts', '모의투자 여부'),
+        ('sz_id', '아이디'),
+        ('sz_pw', '비밀번호'),
+        ('sz_cert_pw', '인증서 비밀번호'),
+        ('nInputLen', '입력값 길이'),
+        ('nCodeLen', '입력 코드길이'),
+        ('szInput', '입력값'),
+        ('szBCType', '조회 타입'),
+        ('szTRCode', '조회 항목'),
+        ('nTRID', '서비스ID'),
+    )
+
+    CHOICES_LEVEL = {
+        'query': {'data-level': '1'},
+        'attach': {'data-level': '2'},
+        'connect': {'data-level': '3'},
+        'disconnect': {'data-level': '4'},
+        'is_hts': {'data-level': '3'},
+        'sz_id': {'data-level': '3'},
+        'sz_pw': {'data-level': '3'},
+        'sz_cert_pw': {'data-level': '3'},
+        'nInputLen': {'data-level': '1'},
+        'nCodeLen': {'data-level': '1'},
+        'szInput': {'data-level': '1'},
+        'szBCType': {'data-level': '1'},
+        'szTRCode': {'data-level': '1'},
+        'nTRID': {'data-level': '1'},
+    }
+    cmd = forms.ChoiceField(choices=CHOICES_CMD, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
+    key = forms.ChoiceField(choices=CHOICES_KEY, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
+    val = forms.CharField(required=True)
+
+
+class StockProcDtlFormInline(admin.TabularInline):
+    model = StockProcDtl
+    form = StockProcDtlForm
+    extra = 3
+
+    class Media:
+        js = [
+            'admin/js/jquery.init.js',
+            'forms/js/select_stock_cmd.js',
+        ]
 
 
 @admin.register(StockProc)
 class StockProcAdmin(admin.ModelAdmin):
-    list_display = ['name']
-    list_display_links = ['name']
+    list_display = ['name', 'status']
+    list_display_links = ['name', 'status']
+    inlines = [StockProcDtlFormInline]
+
+    class Media:
+        js = ['forms/js/select_stock_cmd.js', ]
