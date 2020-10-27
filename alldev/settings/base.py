@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'front.apps.FrontConfig',
     'namuh_bot.apps.NamuhBotConfig',
     'mptt',
+    'nested_inline',
 ]
 
 MIDDLEWARE = [

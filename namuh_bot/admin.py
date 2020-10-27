@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from django import forms
-from django.contrib import admin
+from nested_inline.admin import *
 
 from .models import *
 
@@ -49,15 +48,40 @@ class SelectOptionAddAttribute(forms.Select):  # select option 태그에 attr �
         }
 
 
+CHOICES_LEVEL = {
+    'query': {'data-level': '1'},
+    'attach': {'data-level': '2'},
+    'connect': {'data-level': '3'},
+    'disconnect': {'data-level': '4'},
+    # 구분선 (위 cmd , 아래 param)
+    'is_hts': {'data-level': '3'},
+    'sz_id': {'data-level': '3'},
+    'sz_pw': {'data-level': '3'},
+    'sz_cert_pw': {'data-level': '3'},
+    'nInputLen': {'data-level': '1'},
+    'nCodeLen': {'data-level': '1'},
+    'szInput': {'data-level': '1'},
+    'szBCType': {'data-level': '1'},
+    'szTRCode': {'data-level': '1'},
+    'nTRID': {'data-level': '1'},
+}
+
+
 class StockProcDtlForm(forms.ModelForm):
     CHOICES_CMD = (
+        ('', '-------'),
         ('query', '일회성 조회'),
         ('attach', '실시간 조회'),
         ('connect', '로그인'),
         ('disconnect', '로그아웃'),
     )
 
+    cmd = forms.ChoiceField(choices=CHOICES_CMD, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
+
+
+class StockProcDtlValForm(forms.ModelForm):
     CHOICES_KEY = (
+        ('', '-------'),
         ('is_hts', '모의투자 여부'),
         ('sz_id', '아이디'),
         ('sz_pw', '비밀번호'),
@@ -69,45 +93,35 @@ class StockProcDtlForm(forms.ModelForm):
         ('szTRCode', '조회 항목'),
         ('nTRID', '서비스ID'),
     )
-
-    CHOICES_LEVEL = {
-        'query': {'data-level': '1'},
-        'attach': {'data-level': '2'},
-        'connect': {'data-level': '3'},
-        'disconnect': {'data-level': '4'},
-        'is_hts': {'data-level': '3'},
-        'sz_id': {'data-level': '3'},
-        'sz_pw': {'data-level': '3'},
-        'sz_cert_pw': {'data-level': '3'},
-        'nInputLen': {'data-level': '1'},
-        'nCodeLen': {'data-level': '1'},
-        'szInput': {'data-level': '1'},
-        'szBCType': {'data-level': '1'},
-        'szTRCode': {'data-level': '1'},
-        'nTRID': {'data-level': '1'},
-    }
-    cmd = forms.ChoiceField(choices=CHOICES_CMD, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
     key = forms.ChoiceField(choices=CHOICES_KEY, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
     val = forms.CharField(required=True)
 
 
-class StockProcDtlFormInline(admin.TabularInline):
+class StockProcDtlValFormInline(NestedTabularInline):
+    model = StockProcDtlVal
+    form = StockProcDtlValForm
+    extra = 1
+    fk_name = 'parent'
+
+
+class StockProcDtlFormInline(NestedTabularInline):
     model = StockProcDtl
     form = StockProcDtlForm
-    extra = 3
+    extra = 1
+    fk_name = 'parent'
+    inlines = [StockProcDtlValFormInline]
 
-    class Media:
-        js = [
-            'admin/js/jquery.init.js',
-            'forms/js/select_stock_cmd.js',
-        ]
+    def __str__(self):
+        return '명령어 입력'
 
 
 @admin.register(StockProc)
-class StockProcAdmin(admin.ModelAdmin):
+class StockProcAdmin(NestedModelAdmin):
     list_display = ['name', 'status']
     list_display_links = ['name', 'status']
     inlines = [StockProcDtlFormInline]
 
     class Media:
-        js = ['forms/js/select_stock_cmd.js', ]
+        js = [
+            'forms/js/select_stock_cmd.js',
+        ]
