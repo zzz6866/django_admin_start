@@ -68,7 +68,7 @@ CHOICES_LEVEL = {
 
 
 class StockProcDtlForm(forms.ModelForm):
-    CHOICES_CMD = (
+    CHOICES_REQ_ID = (
         ('', '-------'),
         ('query', '일회성 조회'),
         ('attach', '실시간 조회'),
@@ -76,7 +76,7 @@ class StockProcDtlForm(forms.ModelForm):
         ('disconnect', '로그아웃'),
     )
 
-    cmd = forms.ChoiceField(choices=CHOICES_CMD, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
+    req_id = forms.ChoiceField(choices=CHOICES_REQ_ID, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
 
 
 class StockProcDtlValForm(forms.ModelForm):
@@ -123,5 +123,5 @@ class StockProcAdmin(NestedModelAdmin):
 
     class Media:
         js = [
-            'forms/js/select_stock_cmd.js',
+            'forms/js/select_stock_proc.js',
         ]

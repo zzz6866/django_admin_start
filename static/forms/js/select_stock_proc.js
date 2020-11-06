@@ -19,7 +19,7 @@
             const $this_value_level = $(this).children('option:selected').data('level');
             // console.log($row_index)
             // console.log($this_value)
-            console.log($this_value_level)
+            // console.log($this_value_level)
             $.each($('select[id^=id_stockprocdtl_set-' + $row_index + '-stockprocdtlval_set-][id$=-key]').children('option'), function (e){ // id_stockprocdtl_set-0-stockprocdtlval_set-0-key
                 const $key_value_level = $(this).data('level');
                 // console.log($key_value_level)

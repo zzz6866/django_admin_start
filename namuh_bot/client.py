@@ -3,6 +3,8 @@ import json
 import threading
 from socket import *
 
+from namuh_bot.socket_message import send_msg
+
 
 class Client:
     def __init__(self, host, port):
@@ -30,7 +32,7 @@ class Client:
                 send_json = json.dumps({"req_id": "query", "param": {"nTRID": 1, "szTRCode": "p1005", "szInput": "1", "nInputLen": 1, "nAccountIndex": 0}})  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
             else:
                 send_json = ""
-            self.client_sock.send(send_json.encode('utf-8'))
+            send_msg(self.client_sock, send_json)
 
     def receive(self):
         while True:
@@ -40,7 +42,6 @@ class Client:
 
 if __name__ == '__main__':
     c = Client(gethostname(), 10003)
-
 
 # while True:
 #     time.sleep(1)

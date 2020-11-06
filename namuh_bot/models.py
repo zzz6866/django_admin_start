@@ -38,7 +38,7 @@ class StockProcDtl(models.Model):
         verbose_name = '명령어 입력'
 
     parent = models.ForeignKey(StockProc, blank=False, default=None, verbose_name='상위 번호', on_delete=models.CASCADE)
-    cmd = models.CharField(max_length=15, blank=False, default=None, verbose_name='명령어')
+    req_id = models.CharField(max_length=15, blank=False, default=None, verbose_name='명령어')
 
 
 class StockProcDtlVal(models.Model):
