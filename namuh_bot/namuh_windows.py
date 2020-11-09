@@ -11,7 +11,6 @@ import win32gui
 
 from alldev.settings.base import BASE_DIR
 from namuh_bot.namuh_structure import *
-from namuh_bot.socket_message import SocketMessage
 
 os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\namuh_bot\bin"])
 
@@ -24,7 +23,7 @@ class NamuhWindow:
     sz_pw = ""  # 사용자 비밀번호
     sz_cert_pw = ""  # 공인인증서 비밀번호
     is_while = False  # 가격 체크를 위한 루프 변수 (True : 실시간 체크, False : 루프 종료)
-    is_hts = True  # 모의투자 여부 (True : 모의투자, False : 실투자)
+    is_hts = "true"  # 모의투자 여부 (True : 모의투자, False : 실투자)
     client_socket = None  # 클라이언트 소켓 메시지 리턴을 위한 정보
 
     def __init__(self):
@@ -115,7 +114,7 @@ class NamuhWindow:
         param = json.loads(cast(lParam, c_char_p).value.decode('utf-8'))
         req_id = param["req_id"]
 
-        if req_id == "connect":
+        if req_id == "login":
             print("로그인 시도")
             login = param["param"]
             self.sz_id = login["sz_id"].encode()
@@ -206,7 +205,7 @@ class NamuhWindow:
     def set_is_hts(self, is_hts):
         self.is_hts = is_hts
 
-        if is_hts:  # 모의투자일 경우
+        if is_hts.lower() == "true":  # 모의투자일 경우
             wmca_server = "newmt.wontrading.com"
             wmca_port = "8400"
         else:  # 실투자일 경우
@@ -230,38 +229,53 @@ class NamuhWindow:
 
     def recive_message(self):
         # 서버 호스트 : 클라이언트가 접속할 IP
-        host = socket.gethostname()
-        # 서버포트 : 클라이언트가 접속할 포트
-        port = 10003
+        sockert_host = socket.gethostname()
 
-        sock_msg = SocketMessage()
+        # 서버포트 : 클라이언트가 접속할 포트
+        sockert_port = 10003
+
+        # 소켓 객체 생성
+        # socket.AF_INET : IPv4 체계 사용
+        # socket.SOCK_STREAM : TCP 소켓 타입 사용
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         # WinError 10048 에러 방지를 위한 환경 선언( 포트 사용중 방지 )
-        sock_msg.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
         # 인터페이스
-        sock_msg.bind((host, port))
+        server_socket.bind((sockert_host, sockert_port))
 
         # 서버 포트 허용
-        sock_msg.listen()
-        print("wait connect : " + str(port))
+        server_socket.listen()
+        print("wait connect : " + str(sockert_port))
 
-        self.client_socket, addr = sock_msg.accept()
-        print("Connected by", addr)
-        # 메시지 버퍼 크기 지정
-        data = sock_msg.recv_msg()
+        self.client_socket, addr = server_socket.accept()
+        try:
+            while True:  # 메시지 무제한 수신을 위한 무한루프
+                # 통신 대기 및 클라이언트 소켓 리턴
+                print("Connected by", addr)
 
-        if len(data) == 0:
-            pass
-        else:
-            # 메시지 출력
-            print('Received from', addr, data)
+                # 메시지 버퍼 크기 지정
+                data = self.client_socket.recv(1024)
 
-            # self.request_query(data)
+                if len(data) == 0:
+                    break
+                else:
+                    # 메시지 출력
+                    print('Received from', addr, json.loads(data.decode()))
 
-            # 받은 메시지 재전송(메시지 반환)
-            # self.client_socket.sendall(data)
+                    self.request_query(data)
 
+                    # 받은 메시지 재전송(메시지 반환)
+                    # self.client_socket.sendall(data)
+
+        except Exception as error:
+            print("socket recived message error : ", error)
+        finally:
+            # 소켓 close
+            self.client_socket.close()
+            server_socket.close()
+            self.recive_message()
 
     def request_query(self, param):  # 증권사에 정보 조회
         win32gui.PostMessage(self.hwnd, win32con.WM_COMMAND, 0, param)
@@ -357,7 +371,7 @@ class WinDllWmca:
         # HWND hWnd, int nTRID, constchar* szTRCode, const char* szInput, int nInputLen, int nAccountIndex
         func.argtypes = [HWND, INT, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
-        result = func(hwnd, int(nTRID), szTRCode.encode(), szInput.encode(), int(nInputLen), int(nAccountIndex))
+        result = func(hwnd, nTRID, szTRCode.encode(), szInput.encode(), nInputLen, nAccountIndex)
         # print("query =", bool(result))
         return bool(result)
 
