@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 import os
-import socket
 import sys
-import threading
 
 import win32api
 import win32con
@@ -24,7 +22,6 @@ class NamuhWindow:
     sz_cert_pw = ""  # 공인인증서 비밀번호
     is_while = False  # 가격 체크를 위한 루프 변수 (True : 실시간 체크, False : 루프 종료)
     is_hts = "true"  # 모의투자 여부 (True : 모의투자, False : 실투자)
-    client_socket = None  # 클라이언트 소켓 메시지 리턴을 위한 정보
 
     def __init__(self):
         # message map
@@ -71,10 +68,7 @@ class NamuhWindow:
         self.create_tray_icons()  # 트레이 아이콘 생성
 
         self.wmca = WinDllWmca()  # 모바일증권 나무 DLL 로드
-        t = threading.Thread(target=self.recive_message)
-        t.daemon = True
-        t.start()
-        print(self.__class__, " START!")
+        print("NamuhWindow START!")
 
     def create_tray_icons(self):  # 트레이 아이콘 생성
         # Try and find a custom icon
@@ -178,7 +172,7 @@ class NamuhWindow:
             msg_cd = msg_header.msg_cd.decode("cp949")
             user_msg = msg_header.user_msg.decode("cp949")
             print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.TrIndex, msg_cd, user_msg))
-            self.client_socket.sendall(user_msg.encode())
+            # self.callback_func(200, user_msg)
         except Exception as e:
             print("on_wm_receivemessage Exception = ", e)
 
@@ -227,56 +221,6 @@ class NamuhWindow:
 
         self.wmca.load()
 
-    def recive_message(self):
-        # 서버 호스트 : 클라이언트가 접속할 IP
-        sockert_host = socket.gethostname()
-
-        # 서버포트 : 클라이언트가 접속할 포트
-        sockert_port = 10003
-
-        # 소켓 객체 생성
-        # socket.AF_INET : IPv4 체계 사용
-        # socket.SOCK_STREAM : TCP 소켓 타입 사용
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-        # WinError 10048 에러 방지를 위한 환경 선언( 포트 사용중 방지 )
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-        # 인터페이스
-        server_socket.bind((sockert_host, sockert_port))
-
-        # 서버 포트 허용
-        server_socket.listen()
-        print("wait connect : " + str(sockert_port))
-
-        self.client_socket, addr = server_socket.accept()
-        try:
-            while True:  # 메시지 무제한 수신을 위한 무한루프
-                # 통신 대기 및 클라이언트 소켓 리턴
-                print("Connected by", addr)
-
-                # 메시지 버퍼 크기 지정
-                data = self.client_socket.recv(1024)
-
-                if len(data) == 0:
-                    break
-                else:
-                    # 메시지 출력
-                    print('Received from', addr, json.loads(data.decode()))
-
-                    self.request_query(data)
-
-                    # 받은 메시지 재전송(메시지 반환)
-                    # self.client_socket.sendall(data)
-
-        except Exception as error:
-            print("socket recived message error : ", error)
-        finally:
-            # 소켓 close
-            self.client_socket.close()
-            server_socket.close()
-            self.recive_message()
-
     def request_query(self, param):  # 증권사에 정보 조회
         win32gui.PostMessage(self.hwnd, win32con.WM_COMMAND, 0, param)
         # BOOL    wmcaQuery(HWND hWnd, int nTRID, const char* szTRCode, const char* szInput, int nInputLen, int nAccountIndex=0);
@@ -313,7 +257,7 @@ class NamuhWindow:
             json_list.extend(data.getdict() for data in szData)
             json_data = json.dumps(json_list)
             print(json_data)
-            self.client_socket.sendall(json_data.encode())
+            # self.callback_func(200, json_data.encode())
 
             return szData
         except Exception as e:
