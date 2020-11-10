@@ -22,6 +22,7 @@ class NamuhWindow:
     sz_cert_pw = ""  # 공인인증서 비밀번호
     is_while = False  # 가격 체크를 위한 루프 변수 (True : 실시간 체크, False : 루프 종료)
     is_hts = "true"  # 모의투자 여부 (True : 모의투자, False : 실투자)
+    # callback_class = None
 
     def __init__(self):
         # message map
@@ -172,7 +173,7 @@ class NamuhWindow:
             msg_cd = msg_header.msg_cd.decode("cp949")
             user_msg = msg_header.user_msg.decode("cp949")
             print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.TrIndex, msg_cd, user_msg))
-            # self.callback_func(200, user_msg)
+            # self.callback_class.response(200, user_msg)
         except Exception as e:
             print("on_wm_receivemessage Exception = ", e)
 
@@ -257,7 +258,7 @@ class NamuhWindow:
             json_list.extend(data.getdict() for data in szData)
             json_data = json.dumps(json_list)
             print(json_data)
-            # self.callback_func(200, json_data.encode())
+            # self.callback_class.response(200, json_data)
 
             return szData
         except Exception as e:

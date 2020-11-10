@@ -2,11 +2,16 @@ import http.server
 import threading
 from urllib.parse import urlparse
 
+import win32con
 import win32gui
+
+
+from namuh_bot.namuh_windows import NamuhWindow
 
 
 # HTTP Request class
 class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple http web server
+    namuh = NamuhWindow()
     def do_GET(self):  # HTTP request GET
         self.request_get_mapping()
 
@@ -15,17 +20,17 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
 
     def request_get_mapping(self):  # get path mapping
         request_map = urlparse(self.path)
-        print(request_map)
         if request_map.path == '/hello':
             self.hello()
-        elif request_map.path == '/namuh_windows':
-            self.namuh_windows(request_map.query)
         else:
             self.reponse_404_not_found()
 
     def request_post_mapping(self):  # post path mapping
-        print('request_post_mapping')
-        self.response(200, 'namuh_windows : test')
+        request_map = urlparse(self.path)
+        if request_map.path == '/namuh_windows':
+            self.namuh_windows(request_map.query)
+        else:
+            self.reponse_404_not_found()
 
     def hello(self):  #
         # HTTP status 200
@@ -33,11 +38,10 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
 
     def namuh_windows(self, query):  #
         content_len = int(self.headers.get('content-length', 0))
-        body = self.rfile.read(content_len)
-        print("body :", body)
-        print("query :", query)
+        body = self.rfile.read(content_len).decode('utf-8')
         # HTTP response status 200
-        self.response(200, 'namuh_windows : test')
+        self.namuh.request_query(body.encode('utf-8'))
+        self.response(200, '')
 
     def reponse_404_not_found(self):  # HTTP status 404  : not found
         self.response(404, '404 Not Found')
