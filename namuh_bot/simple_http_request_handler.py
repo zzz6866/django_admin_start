@@ -1,10 +1,5 @@
 import http.server
-import threading
 from urllib.parse import urlparse
-
-import win32con
-import win32gui
-
 
 from namuh_bot.namuh_windows import NamuhWindow
 
@@ -40,22 +35,22 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
         content_len = int(self.headers.get('content-length', 0))
         body = self.rfile.read(content_len).decode('utf-8')
         # HTTP response status 200
-        self.namuh.request_query(body.encode('utf-8'))
-        self.response(200, '')
+        res = self.namuh.request_query(body)
+        self.response(200, res)
 
     def reponse_404_not_found(self):  # HTTP status 404  : not found
         self.response(404, '404 Not Found')
 
-    def response(self, status_code, body):  # HTTP Response send
+    def response(self, status_code, body=''):  # HTTP Response send
         # send status
         self.send_response(status_code)
 
         # send header
-        self.send_header('Content-type', 'text/plain; charset=utf-8')
+        self.send_header('Content-type', 'application/json; charset=utf-8')
         self.end_headers()
 
         # send body
-        self.wfile.write(body.encode('utf-8'))
+        self.wfile.write(str(body).encode('utf-8'))
 
 
 if __name__ == '__main__':
@@ -65,7 +60,8 @@ if __name__ == '__main__':
     listener = http.server.HTTPServer(ADDRESS, SimpleHTTPRequestHandler)  #
     print(f'http://{ADDRESS[0]}:{ADDRESS[1]} wait request connect...')
 
-    t = threading.Thread(target=listener.serve_forever)
-    t.daemon = True
-    t.start()
-    win32gui.PumpMessages()  # MFC 메시지 수집
+    listener.serve_forever()
+    # t = threading.Thread(target=listener.serve_forever)
+    # t.daemon = True
+    # t.start()
+    # win32gui.PumpMessages()  # MFC 메시지 수집

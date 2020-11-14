@@ -17,12 +17,12 @@ from ctypes.wintypes import *
 
 # Create your tests here.
 class NamuhWindow:
-    sz_id = ""  # 사용자 아이디
-    sz_pw = ""  # 사용자 비밀번호
-    sz_cert_pw = ""  # 공인인증서 비밀번호
-    is_while = False  # 가격 체크를 위한 루프 변수 (True : 실시간 체크, False : 루프 종료)
-    is_hts = "true"  # 모의투자 여부 (True : 모의투자, False : 실투자)
+    sz_id = ''  # 사용자 아이디
+    sz_pw = ''  # 사용자 비밀번호
+    sz_cert_pw = ''  # 공인인증서 비밀번호
+    is_hts = 'true'  # 모의투자 여부 (True : 모의투자, False : 실투자)
     # callback_class = None
+    response = []
 
     def __init__(self):
         # message map
@@ -31,7 +31,7 @@ class NamuhWindow:
             # win32con.WM_DESTROY: self.OnDestroy,
             CA_WMCAEVENT: self.wnd_proc,
             CA_RECEIVEERROR: self.wnd_proc,
-            win32con.WM_COMMAND: self.on_command,
+            # win32con.WM_COMMAND: self.on_command,
             ON_TASKBAR_NOTIFY: self.on_taskbar_notify,
         }
 
@@ -99,19 +99,12 @@ class NamuhWindow:
             # but keep running anyway - when explorer starts, we get the
             # TaskbarCreated message.
 
-    def on_command(self, hwnd, message, wParam, lParam):
-        if message == win32con.WM_DESTROY or wParam == MENU_EXIT:  # 윈도우 창 닫기 버튼 클릭시 # 접속 끊김
-            print("Goodbye")
-            win32gui.PostQuitMessage(0)
-            win32gui.DestroyWindow(self.hwnd)
-            return 1
-
-        param = json.loads(cast(lParam, c_char_p).value.decode('utf-8'))
-        req_id = param["req_id"]
+    def on_command(self, json):
+        req_id = json["req_id"]
 
         if req_id == "login":
             print("로그인 시도")
-            login = param["param"]
+            login = json["param"]
             self.sz_id = login["sz_id"].encode()
             self.sz_pw = login["sz_pw"].encode()
             self.sz_cert_pw = login["sz_cert_pw"].encode()
@@ -122,7 +115,7 @@ class NamuhWindow:
 
         elif req_id == "query":
             print("시세 조회")
-            query = param["param"]
+            query = json["param"]
 
             if self.wmca.is_connected():
                 self.wmca.query(self.hwnd, query["nTRID"], query["szTRCode"], query["szInput"], query["nInputLen"], query["nAccountIndex"])  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
@@ -130,7 +123,7 @@ class NamuhWindow:
                 print("로그인 되지 않음")  # TODO : 리턴 메시지 작성 필요
 
         elif req_id == "attach":
-            query = param["param"]
+            query = json["param"]
             self.wmca.detach_all()
             result = self.wmca.attach(self.hwnd, query["szBCType"], query["szInput"], query["nCodeLen"], query["nInputLen"])  # szBCType, szInput, nCodeLen, nInputLen
             print("실시간 시세 조회 = ", result)
@@ -138,7 +131,7 @@ class NamuhWindow:
         elif req_id == "detach_all":
             print("실시간 일괄 취소 = ", self.wmca.detach_all())
 
-        return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
+        return 1
 
     def wnd_proc(self, hwnd, message, wParam, lParam):  # wmca MFC 콜백 처리
         # if wParam == CA_DISCONNECTED:
@@ -148,20 +141,24 @@ class NamuhWindow:
         # el
         if wParam == CA_CONNECTED:  # 로그인 성공
             print("로그인 성공")
+            self.response.append({"login": "success"})
+            win32gui.PostQuitMessage(0)  # mfc 메시지 루프 종료 (메시지를 받고 종료 처리 뒷 프로세스 실행을 위함)
         elif wParam == CA_SOCKETERROR:  # 통신 오류 발생
             print("통신 오류 발생")
         elif wParam == CA_RECEIVEDATA:  # 서비스 응답 수신(TR)
             print("서비스 응답 수신(TR)")
-            self.on_wm_receivedata(lParam)
+            self.response.append(self.on_wm_receivedata(lParam))
         elif wParam == CA_RECEIVESISE:  # 실시간 데이터 수신(BC)
             print("실시간 데이터 수신(BC)")
-            self.on_wm_receivesise(lParam)
+            self.response.append(self.on_wm_receivesise(lParam))
         elif wParam == CA_RECEIVEMESSAGE:  # 상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)
             self.on_wm_receivemessage(lParam)
         elif wParam == CA_RECEIVECOMPLETE:  # 서비스 처리 완료
             print("서비스 처리 완료")
+            win32gui.PostQuitMessage(0)  # mfc 메시지 루프 종료 (메시지를 받고 종료 처리 뒷 프로세스 실행을 위함)
         elif wParam == CA_RECEIVEERROR:  # 서비스 처리중 오류 발생 (입력값 오류등)
             print("서비스 처리중 오류 발생 (입력값 오류등)")
+
         return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
 
     def on_wm_receivemessage(self, lParam):
@@ -173,7 +170,7 @@ class NamuhWindow:
             msg_cd = msg_header.msg_cd.decode("cp949")
             user_msg = msg_header.user_msg.decode("cp949")
             print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.TrIndex, msg_cd, user_msg))
-            # self.callback_class.response(200, user_msg)
+            return f"{msg_cd} : {user_msg}"
         except Exception as e:
             print("on_wm_receivemessage Exception = ", e)
 
@@ -216,16 +213,26 @@ class NamuhWindow:
         config.set("", "port", wmca_port)
         config.set("", "로그사용", "Y")
         python_exe_path = os.path.dirname(sys.executable)
-        print(python_exe_path)
+        # print("python_exe_path :", python_exe_path)
         with open(python_exe_path + '/wmca.ini', 'w', encoding="utf-8") as configfile:  # python.exe 경로에 wmca.ini 생성(해당 경로에서 생성해야 적용됨)
             config.write(configfile, space_around_delimiters=False)  # space_around_delimiters : 환경변수의 공백여부 (공백이 있을 경우 읽지 못함)
 
         self.wmca.load()
 
     def request_query(self, param):  # 증권사에 정보 조회
-        win32gui.PostMessage(self.hwnd, win32con.WM_COMMAND, 0, param)
-        # BOOL    wmcaQuery(HWND hWnd, int nTRID, const char* szTRCode, const char* szInput, int nInputLen, int nAccountIndex=0);
-        # self.wmca.query(self.hwnd, 0, b"c1101", b"K000000", 7, 0)
+        self.on_command(json.loads(param))
+        # win32gui.PostMessage(self.hwnd, win32con.WM_COMMAND, 0, param)
+        # msg = MSG()
+        # pMsg = pointer(msg)
+        #
+        # user32 = windll.user32
+        # while user32.GetMessageW(pMsg, 0, 0, 0) != 0:
+        #     user32.TranslateMessage(pMsg)
+        #     user32.DispatchMessageW(pMsg)
+        self.response = []
+        win32gui.PumpMessages()  # MFC 메시지 수집
+        print("success")
+        return self.response
 
     def on_wm_receivedata(self, lParam):  # OnWmReceivedata( (OUTDATABLOCK*)lParam );
         try:
@@ -254,13 +261,11 @@ class NamuhWindow:
             # if szBlockName == "c1101OutBlock":
             #     print("'" + szData.get_str("code") + "'")
             #     print("'" + szData.get_str("hname") + "'")
-            json_list = []
-            json_list.extend(data.getdict() for data in szData)
-            json_data = json.dumps(json_list)
-            print(json_data)
-            # self.callback_class.response(200, json_data)
 
-            return szData
+            json_dump = []
+            json_dump.extend(data.getdict() for data in szData)
+
+            return json_dump
         except Exception as e:
             print("on_wm_receivedata Exception = ", e)
 
@@ -278,7 +283,7 @@ class NamuhWindow:
                 p_sise_data = D3OutBlockStruct.from_buffer(string_buffer, 3)
 
             print(f"{pData.szBlockName[:2]} : {repr(p_sise_data)}")
-
+            return p_sise_data
         except Exception as e:
             print("on_wm_receivesise Exception = ", e)
 
@@ -373,4 +378,3 @@ class WinDllWmca:
 
 if __name__ == '__main__':
     w = NamuhWindow()
-    win32gui.PumpMessages()  # MFC 메시지 수집
