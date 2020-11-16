@@ -35,9 +35,8 @@ def get_stock_cd_list():  # 한국거래소에서 상장 종목 가져오기 (xl
     print(response.text)
 
     res_json = json.loads(response.text)
-    for node in res_json:
-        stock_cd = StockCd()
-        stock_cd.cd = node.code
-        stock_cd.nm = node.hnamez40
+    for node in res_json[0]['p1005OutBlock']:
+        # print("node.code :", node.get('code'), " // node.hnamez40 :", node.get('hnamez40'))
+        stock_cd = StockCd(cd=node.get('code'), nm=node.get('hnamez40'))
         stock_cd.save()
 
