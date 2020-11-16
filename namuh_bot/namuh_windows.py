@@ -255,8 +255,7 @@ class NamuhWindow:
             #     print("'" + szData.get_str("code") + "'")
             #     print("'" + szData.get_str("hname") + "'")
 
-            json_dump = []
-            json_dump.extend(data.getdict() for data in szData)
+            json_dump = {szBlockName: [data.getdict() for data in szData]}
 
             return json_dump
         except Exception as e:
@@ -314,7 +313,7 @@ class WinDllWmca:
         # HWND hWnd, int nTRID, constchar* szTRCode, const char* szInput, int nInputLen, int nAccountIndex
         func.argtypes = [HWND, INT, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
-        result = func(hwnd, nTRID, szTRCode.encode(), szInput.encode(), nInputLen, nAccountIndex)
+        result = func(hwnd, int(nTRID), szTRCode.encode(), szInput.encode(), int(nInputLen), int(nAccountIndex))
         # print("query =", bool(result))
         return bool(result)
 

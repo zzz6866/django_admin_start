@@ -56,7 +56,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
 
 if __name__ == '__main__':
     # request address, port
-    ADDRESS = ('localhost', 8000)
+    ADDRESS = ('localhost', 10003)
     # wait request
     listener = http.server.HTTPServer(ADDRESS, SimpleHTTPRequestHandler)  #
     print(f'http://{ADDRESS[0]}:{ADDRESS[1]} wait request connect...')
