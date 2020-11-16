@@ -7,6 +7,7 @@ from namuh_bot.namuh_windows import NamuhWindow
 # HTTP Request class
 class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple http web server
     namuh = NamuhWindow()
+
     def do_GET(self):  # HTTP request GET
         self.request_get_mapping()
 
@@ -41,7 +42,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
     def reponse_404_not_found(self):  # HTTP status 404  : not found
         self.response(404, '404 Not Found')
 
-    def response(self, status_code, body=''):  # HTTP Response send
+    def response(self, status_code, body):  # HTTP Response send
         # send status
         self.send_response(status_code)
 

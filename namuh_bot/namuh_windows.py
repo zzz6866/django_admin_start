@@ -220,17 +220,10 @@ class NamuhWindow:
         self.wmca.load()
 
     def request_query(self, param):  # 증권사에 정보 조회
-        self.on_command(json.loads(param))
-        # win32gui.PostMessage(self.hwnd, win32con.WM_COMMAND, 0, param)
-        # msg = MSG()
-        # pMsg = pointer(msg)
-        #
-        # user32 = windll.user32
-        # while user32.GetMessageW(pMsg, 0, 0, 0) != 0:
-        #     user32.TranslateMessage(pMsg)
-        #     user32.DispatchMessageW(pMsg)
-        self.response = []
-        win32gui.PumpMessages()  # MFC 메시지 수집
+        for node in json.loads(param):
+            self.on_command(node)
+            self.response = []
+            win32gui.PumpMessages()  # MFC 메시지 수집
         print("success")
         return self.response
 
