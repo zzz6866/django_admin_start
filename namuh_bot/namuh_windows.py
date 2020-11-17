@@ -225,7 +225,7 @@ class NamuhWindow:
             self.response = []
             win32gui.PumpMessages()  # MFC 메시지 수집
         print("success")
-        return self.response
+        return json.dumps(self.response)
 
     def on_wm_receivedata(self, lParam):  # OnWmReceivedata( (OUTDATABLOCK*)lParam );
         try:

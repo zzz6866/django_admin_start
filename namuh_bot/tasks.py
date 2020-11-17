@@ -26,17 +26,20 @@ def get_stock_cd_list():  # 한국거래소에서 상장 종목 가져오기 (xl
         # print(stock_proc_dtl_val.query)
         # {"req_id": "query", "param": {"nTRID": 1, "szTRCode": "p1005", "szInput": "1", "nInputLen": 1, "nAccountIndex": 0}}
         node = {'req_id': dtl.req_id, 'param': dict((dtl.values()) for dtl in stock_proc_dtl_val.values('key', 'val'))}
-        print(node)
+        # logger.debug(node)
         param.append(node)
         # dict((dtl.values()) for dtl in stock_proc_dtl.values('key', 'val'))
 
     response = requests.post(url, headers=headers, json=param)
-    print(response.status_code)
-    print(response.text)
+    logger.info(f"status_code : {response.status_code}")
+    # print(response.json())
 
-    res_json = json.loads(response.text)
-    for node in res_json[0]['p1005OutBlock']:
+    p1005OutBlock = response.json()[0]['p1005OutBlock']
+    for node in p1005OutBlock:
         # print("node.code :", node.get('code'), " // node.hnamez40 :", node.get('hnamez40'))
         stock_cd = StockCd(cd=node.get('code'), nm=node.get('hnamez40'))
         stock_cd.save()
+
+    logger.info(f"p1005OutBlock : SAVE {len(p1005OutBlock)}")
+    logger.info("get_stock_cd_list END !!!!")
 
