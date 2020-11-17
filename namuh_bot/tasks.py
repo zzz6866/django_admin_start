@@ -17,13 +17,14 @@ def get_stock_cd_list():  # 봇에서 상장 종목 가져오기 (dll call)
     stock_proc = StockProc.objects.filter(proc_type='A').first()
     response = request_bot(stock_proc)
 
-    p1005OutBlock = response.json()[0]['p1005OutBlock']
-    for node in p1005OutBlock:  # 종목 코드 저장
-        logger.debug(f"code : {node.get('code')} => hnamez40 : {node.get('hnamez40')}")
-        stock_cd = StockCd(cd=node.get('code'), nm=node.get('hnamez40'))
-        stock_cd.save()
+    if response:
+        stock_list = response.json()[0]['p1005OutBlock']
+        for node in stock_list:  # 종목 코드 저장
+            logger.debug(f"code : {node.get('code')} => hnamez40 : {node.get('hnamez40')}")
+            stock_cd = StockCd(cd=node.get('code'), nm=node.get('hnamez40'))
+            stock_cd.save()
+        logger.info(f"p1005OutBlock : SAVE {len(stock_list)}")
 
-    logger.info(f"p1005OutBlock : SAVE {len(p1005OutBlock)}")
     logger.info("get_stock_cd_list END !!!!")
 
 
@@ -35,7 +36,7 @@ def get_today_flip_order():  # 금일 단타 주문
     for proc in stock_proc_list:
         response = request_bot(proc)
         if response:
-            pass  # validation check
+            logger.debug(response.json())  # validation check
 
     logger.info("get_today_flip_order END !!!!")
 
@@ -53,7 +54,7 @@ def request_bot(stock_proc):  # 봇에 데이터 요청
             # print(stock_proc_dtl_val.query)
             # {"req_id": "query", "param": {"nTRID": 1, "szTRCode": "p1005", "szInput": "1", "nInputLen": 1, "nAccountIndex": 0}}
             node = {'req_id': proc_dtl.req_id, 'param': dict((dtl.values()) for dtl in stock_proc_dtl_val.values('key', 'val'))}
-            logger.debug(node)
+            # logger.debug(node)
             param.append(node)
             # dict((proc_dtl.values()) for proc_dtl in stock_proc_dtl.values('key', 'val'))
         response = requests.post(url, headers=headers, json=param)

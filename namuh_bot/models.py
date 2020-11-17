@@ -15,6 +15,15 @@ class StockCd(models.Model):
     nm = models.CharField(max_length=100, verbose_name='종목명')
 
 
+PROC_TYPE_KEY = (
+    ('', '-------'),
+    ('A', '종목 조회'),
+    ('B', '금일 단타'),
+    ('C', '매수 처리'),
+    ('D', '매도 처리'),
+)
+
+
 class StockProc(models.Model):
     def __str__(self):
         return self.name
@@ -25,7 +34,7 @@ class StockProc(models.Model):
         verbose_name = '요청 프로세스'
 
     name = models.CharField(max_length=15, verbose_name='이름')  # 명칭
-    proc_type = models.CharField(max_length=1, verbose_name='요청 구분', blank=True)  # A : 종목조회, B : 금일 단타, C : 매수 처리, D : 매도 처리 .....
+    proc_type = models.CharField(max_length=1, verbose_name='요청 구분', blank=True, choices=PROC_TYPE_KEY)  # A : 종목조회, B : 금일 단타, C : 매수 처리, D : 매도 처리 .....
     status = models.BooleanField(default=False, verbose_name='완료 유무')  # 완료 유무
 
 
