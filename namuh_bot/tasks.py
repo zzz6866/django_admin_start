@@ -52,7 +52,7 @@ def request_bot(stock_proc):  # 봇에 데이터 요청
             stock_proc_dtl_val = StockProcDtlVal.objects.filter(parent_id=proc_dtl.id)
             # print(stock_proc_dtl_val.query)
             # {"req_id": "query", "param": {"nTRID": 1, "szTRCode": "p1005", "szInput": "1", "nInputLen": 1, "nAccountIndex": 0}}
-            node = {'req_id': proc_dtl.req_id, 'param': dict((dtl.values()) for dtl in stock_proc_dtl_val.values('key', 'val'))}
+            node = {'req_id': proc_dtl.req_id, 'param': dict((proc_dtl_val.values()) for proc_dtl_val in stock_proc_dtl_val.values('key', 'val'))}
             logger.debug(node)
             param.append(node)
             # dict((proc_dtl.values()) for proc_dtl in stock_proc_dtl.values('key', 'val'))
