@@ -102,14 +102,14 @@ class NamuhWindow:
     def on_command(self, json):
         req_id = json["req_id"]
 
-        if req_id == "login":
+        if req_id == "connect":
             print("로그인 시도")
-            login = json["param"]
-            self.sz_id = login["sz_id"].encode()
-            self.sz_pw = login["sz_pw"].encode()
-            self.sz_cert_pw = login["sz_cert_pw"].encode()
+            connect = json["param"]
+            self.sz_id = connect["sz_id"].encode()
+            self.sz_pw = connect["sz_pw"].encode()
+            self.sz_cert_pw = connect["sz_cert_pw"].encode()
 
-            self.set_is_hts(login["is_hts"])  # 모의투자 or 실투자 변경
+            self.set_is_hts(connect["is_hts"])  # 모의투자 or 실투자 변경
 
             self.wmca.connect(self.hwnd, self.sz_id, self.sz_pw, self.sz_cert_pw)
 
@@ -141,7 +141,7 @@ class NamuhWindow:
         # el
         if wParam == CA_CONNECTED:  # 로그인 성공
             print("로그인 성공")
-            self.response.append({"login": "success"})
+            # self.response.append({"login": "success"})
             win32gui.PostQuitMessage(0)  # mfc 메시지 루프 종료 (메시지를 받고 종료 처리 뒷 프로세스 실행을 위함)
         elif wParam == CA_SOCKETERROR:  # 통신 오류 발생
             print("통신 오류 발생")

@@ -115,10 +115,22 @@ class StockProcDtlFormInline(NestedTabularInline):
         return '명령어 입력'
 
 
+class StockProcForm(forms.ModelForm):
+    PROC_TYPE_KEY = (
+        ('', '-------'),
+        ('A', '종목 조회'),
+        ('B', '금일 단타'),
+        ('C', '매수 처리'),
+        ('D', '매도 처리'),
+    )
+    proc_type = forms.ChoiceField(label='요청 구분', choices=PROC_TYPE_KEY, required=True, widget=forms.Select)
+
+
 @admin.register(StockProc)
 class StockProcAdmin(NestedModelAdmin):
-    list_display = ['name', 'status']
-    list_display_links = ['name', 'status']
+    form = StockProcForm
+    list_display = ['name', 'proc_type', 'status']
+    list_display_links = ['name', 'proc_type', 'status']
     inlines = [StockProcDtlFormInline]
 
     class Media:

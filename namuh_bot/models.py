@@ -25,6 +25,7 @@ class StockProc(models.Model):
         verbose_name = '요청 프로세스'
 
     name = models.CharField(max_length=15, verbose_name='이름')  # 명칭
+    proc_type = models.CharField(max_length=1, verbose_name='요청 구분', blank=True)  # A : 종목조회, B : 금일 단타, C : 매수 처리, D : 매도 처리 .....
     status = models.BooleanField(default=False, verbose_name='완료 유무')  # 완료 유무
 
 
