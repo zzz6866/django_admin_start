@@ -92,6 +92,7 @@ class StockProcDtlValForm(forms.ModelForm):
         ('szBCType', '조회 타입'),
         ('szTRCode', '조회 항목'),
         ('nTRID', '서비스ID'),
+        ('nAccountIndex', '계좌 index'),
     )
     key = forms.ChoiceField(choices=CHOICES_KEY, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
     val = forms.CharField(required=True)
@@ -115,22 +116,10 @@ class StockProcDtlFormInline(NestedTabularInline):
         return '명령어 입력'
 
 
-class StockProcForm(forms.ModelForm):
-    PROC_TYPE_KEY = (
-        ('', '-------'),
-        ('A', '종목 조회'),
-        ('B', '금일 단타'),
-        ('C', '매수 처리'),
-        ('D', '매도 처리'),
-    )
-    proc_type = forms.ChoiceField(label='요청 구분', choices=PROC_TYPE_KEY, required=True, widget=forms.Select)
-
-
 @admin.register(StockProc)
 class StockProcAdmin(NestedModelAdmin):
-    form = StockProcForm
     list_display = ['name', 'proc_type', 'status']
-    list_display_links = ['name', 'proc_type', 'status']
+    list_display_links = ['name']
     inlines = [StockProcDtlFormInline]
 
     class Media:
