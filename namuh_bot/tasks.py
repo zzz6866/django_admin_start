@@ -4,6 +4,7 @@ from __future__ import absolute_import, unicode_literals
 import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.forms import model_to_dict
 
 from namuh_bot.models import StockProc, StockProcDtl, StockProcDtlVal, StockCd
 
@@ -46,17 +47,21 @@ def request_bot(stock_proc):  # 봇에 데이터 요청
     url = 'http://localhost:10003/namuh_windows'
     param = []
 
-    stock_proc_dtl = StockProcDtl.objects.filter(parent_id=stock_proc)
-    response = None
-    if stock_proc_dtl:
-        for proc_dtl in stock_proc_dtl:
-            stock_proc_dtl_val = StockProcDtlVal.objects.filter(parent_id=proc_dtl.id)
-            # print(stock_proc_dtl_val.query)
-            # {"req_id": "query", "param": {"nTRID": 1, "szTRCode": "p1005", "szInput": "1", "nInputLen": 1, "nAccountIndex": 0}}
-            node = {'req_id': proc_dtl.req_id, 'param': dict((proc_dtl_val.values()) for proc_dtl_val in stock_proc_dtl_val.values('key', 'val'))}
-            # logger.debug(node)
-            param.append(node)
-            # dict((proc_dtl.values()) for proc_dtl in stock_proc_dtl.values('key', 'val'))
-        response = requests.post(url, headers=headers, json=param)
-        logger.info(f"status_code : {response.status_code}")
+    proc_dtl_list = stock_proc.stockprocdtl_set.all()
+    # logger.debug(f"proc_dtl_list : {proc_dtl_list.values('req_id')}")
+    # res.append(list(proc_dtl_list.values('req_id')))
+    # proc_dict = model_to_dict(stock_proc, exclude=['id', 'proc_type', 'status'])
+    for proc_dtl in proc_dtl_list:
+        proc_dtl_val_list = proc_dtl.stockprocdtlval_set.all()
+        proc_dtl_dict = model_to_dict(proc_dtl, exclude=['id', 'parent'])
+        proc_dtl_val_dict = dict((val.values()) for val in proc_dtl_val_list.values('key', 'val'))
+        if not proc_dtl_val_dict:  # key val 구조의 값이 없을 경우 봇을 call 하지 않음
+            return None
+        proc_dtl_dict.update({"param": proc_dtl_val_dict})
+        # logger.debug(f"proc_dtl : {proc_dtl_dict}")
+        param.append(proc_dtl_dict)
+    logger.debug(param)
+    response = requests.post(url, headers=headers, json=param)
+
+    logger.info(f"status_code : {response.status_code}")
     return response

@@ -7,11 +7,13 @@ from namuh_bot.namuh_windows import NamuhWindow
 # HTTP Request class
 class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple http web server
     namuh = NamuhWindow()
+    timeout = 6  # 타임아웃 5초
 
     def do_GET(self):  # HTTP request GET
         self.request_get_mapping()
 
-    def do_POST(self):  # HTTP request GET
+    def do_POST(self):  # HTTP request POST
+        # print(f'timeout is {self.timeout} seconds')
         self.request_post_mapping()
 
     def request_get_mapping(self):  # get path mapping
