@@ -53,7 +53,7 @@ CHOICES_LEVEL = {
     'attach': {'data-level': '2'},
     'connect': {'data-level': '3'},
     'disconnect': {'data-level': '4'},
-    # 구분선 (위 cmd , 아래 param)
+    # 구분선 (위 req_id , 아래 param)
     'is_hts': {'data-level': '3'},
     'sz_id': {'data-level': '3'},
     'sz_pw': {'data-level': '3'},

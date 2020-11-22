@@ -11,9 +11,9 @@
 })*/
 'use strict';
 {
-    const $ = django.jQuery;
+    const $ = jQuery;
     $(document).ready(function () {
-        $(document).on('change', 'select[id^=id_stockprocdtl_set-][id$=-cmd]', function (e) { // id_stockprocdtl_set-0-cmd
+        $(document).on('change', 'select[id^=id_stockprocdtl_set-][id$=-req_id]', function (e) { // id_stockprocdtl_set-0-req_id
             const $row_index = $(this).attr('id').replace(/[^0-9]/g, "");
             const $this_value = $(this).val();
             const $this_value_level = $(this).children('option:selected').data('level');
@@ -32,8 +32,8 @@
             });
         });
 
-        $('select[id^=id_stockprocdtl_set-][id$=-cmd]').each(function (idx, e) {
-            // console.log(idx);
+        $('select[id^=id_stockprocdtl_set-][id$=-req_id]').each(function (idx, e) {
+           // console.log(idx);
             $(this).trigger('change', true)
         });
     });
