@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'namuh_bot.apps.NamuhBotConfig',
     'mptt',
     'nested_inline',
+    'django_celery_beat',
+    'django_celery_results',
 ]
 
 MIDDLEWARE = [
