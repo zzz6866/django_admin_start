@@ -6,10 +6,22 @@ from .models import *
 
 # Register your models here.
 
-@admin.register(StockCd)
-class StockCdAdmin(admin.ModelAdmin):
+@admin.register(CD)
+class CDAdmin(admin.ModelAdmin):
     list_display = ['cd', 'nm']
     list_display_links = ['cd', 'nm']
+
+    def get_model_perms(self, request):  # 모델 리스트에서 제외, proc 상세 뷰에서 추가 및 수정 처리 함
+        return {'view': self.has_view_permission(request)}
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
 
 
 class SelectOptionAddAttribute(forms.Select):  # select option 태그에 attr 추가 되도록 재정의
@@ -48,81 +60,59 @@ class SelectOptionAddAttribute(forms.Select):  # select option 태그에 attr �
         }
 
 
-CHOICES_LEVEL = {
-    'query': {'data-level': '1'},
-    'attach': {'data-level': '2'},
-    'connect': {'data-level': '3'},
-    'disconnect': {'data-level': '4'},
-    # 구분선 (위 req_id , 아래 param)
-    'is_hts': {'data-level': '3'},
-    'sz_id': {'data-level': '3'},
-    'sz_pw': {'data-level': '3'},
-    'sz_cert_pw': {'data-level': '3'},
-    'nInputLen': {'data-level': '1'},
-    'nCodeLen': {'data-level': '1'},
-    'szInput': {'data-level': '1'},
-    'szBCType': {'data-level': '1'},
-    'szTRCode': {'data-level': '1'},
-    'nTRID': {'data-level': '1'},
-}
+# CHOICES_LEVEL = {
+#     'query': {'data-level': '1'},
+#     'attach': {'data-level': '2'},
+#     'connect': {'data-level': '3'},
+#     'disconnect': {'data-level': '4'},
+#     # 구분선 (위 req_id , 아래 param)
+#     'is_hts': {'data-level': '3'},
+#     'sz_id': {'data-level': '3'},
+#     'sz_pw': {'data-level': '3'},
+#     'sz_cert_pw': {'data-level': '3'},
+#     'nInputLen': {'data-level': '1'},
+#     'nCodeLen': {'data-level': '1'},
+#     'szInput': {'data-level': '1'},
+#     'szBCType': {'data-level': '1'},
+#     'szTRCode': {'data-level': '1'},
+#     'nTRID': {'data-level': '1'},
+# }
 
 
-class StockProcDtlForm(forms.ModelForm):
-    CHOICES_REQ_ID = (
-        ('', '-------'),
-        ('query', '일회성 조회'),
-        ('attach', '실시간 조회'),
-        ('connect', '로그인'),
-        ('disconnect', '로그아웃'),
-    )
-
-    req_id = forms.ChoiceField(choices=CHOICES_REQ_ID, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
-
-
-class StockProcDtlValForm(forms.ModelForm):
-    CHOICES_KEY = (
-        ('', '-------'),
-        ('is_hts', '모의투자 여부'),
-        ('sz_id', '아이디'),
-        ('sz_pw', '비밀번호'),
-        ('sz_cert_pw', '인증서 비밀번호'),
-        ('nInputLen', '입력값 길이'),
-        ('nCodeLen', '입력 코드길이'),
-        ('szInput', '입력값'),
-        ('szBCType', '조회 타입'),
-        ('szTRCode', '조회 항목'),
-        ('nTRID', '서비스ID'),
-        ('nAccountIndex', '계좌 index'),
-    )
-    key = forms.ChoiceField(choices=CHOICES_KEY, required=True, widget=SelectOptionAddAttribute(option_attrs=CHOICES_LEVEL))
-    val = forms.CharField(required=True)
-
-
-class StockProcDtlValFormInline(NestedTabularInline):
-    model = StockProcDtlVal
-    form = StockProcDtlValForm
+class ProcValidFormInline(NestedTabularInline):
+    model = ProcValid
+    # form = ProcDtlValForm
     extra = 1
     fk_name = 'parent'
 
 
-class StockProcDtlFormInline(NestedTabularInline):
-    model = StockProcDtl
-    form = StockProcDtlForm
+class ProcOrderFormInline(NestedTabularInline):
+    model = ProcOrder
+    # form = ProcOrderForm
     extra = 1
     fk_name = 'parent'
-    inlines = [StockProcDtlValFormInline]
+    inlines = [ProcValidFormInline]
 
-    def __str__(self):
-        return '명령어 입력'
+    # def __str__(self):
+    #     return ''
 
 
-@admin.register(StockProc)
-class StockProcAdmin(NestedModelAdmin):
-    list_display = ['name', 'proc_type', 'status']
+@admin.register(Proc)
+class ProcAdmin(NestedModelAdmin):
+    list_display = ['name', 'status']
     list_display_links = ['name']
-    inlines = [StockProcDtlFormInline]
+    exclude = ['proc_type']
+    inlines = [ProcOrderFormInline]
 
     class Media:
         js = [
             'forms/js/select_stock_proc.js',
         ]
+
+
+@admin.register(ProcLogin)
+class ProcLoginAdmin(admin.ModelAdmin):
+    # def get_model_perms(self, request):  # 모델 리스트에서 제외, proc 상세 뷰에서 추가 및 수정 처리 함
+    #     return {}
+    def has_module_permission(self, request):  # 모델 리스트에서 제외, proc 상세 뷰에서 추가 및 수정 처리 함
+        return False

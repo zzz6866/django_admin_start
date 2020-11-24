@@ -111,25 +111,29 @@ class NamuhWindow:
 
             self.set_is_hts(connect["is_hts"])  # 모의투자 or 실투자 변경
 
-            self.wmca.connect(self.hwnd, self.sz_id, self.sz_pw, self.sz_cert_pw)
+            return self.wmca.connect(self.hwnd, self.sz_id, self.sz_pw, self.sz_cert_pw)
 
         elif req_id == "query":
-            print("시세 조회")
+            print("일회성 조회")
             query = json["param"]
 
             if self.wmca.is_connected():
-                self.wmca.query(self.hwnd, query["nTRID"], query["szTRCode"], query["szInput"], query["nInputLen"], query["nAccountIndex"])  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
+                return self.wmca.query(self.hwnd, query["nTRID"], query["szTRCode"], query["szInput"], query["nInputLen"], query["nAccountIndex"])  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
             else:
                 print("로그인 되지 않음")  # TODO : 리턴 메시지 작성 필요
+                return False
 
         elif req_id == "attach":
             query = json["param"]
             self.wmca.detach_all()
             result = self.wmca.attach(self.hwnd, query["szBCType"], query["szInput"], query["nCodeLen"], query["nInputLen"])  # szBCType, szInput, nCodeLen, nInputLen
             print("실시간 시세 조회 = ", result)
+            return result
 
         elif req_id == "detach_all":
-            print("실시간 일괄 취소 = ", self.wmca.detach_all())
+            result = self.wmca.detach_all()
+            print("실시간 일괄 취소 = ", result)
+            return result
 
         return 1
 
@@ -152,7 +156,8 @@ class NamuhWindow:
             print("실시간 데이터 수신(BC)")
             self.response.append(self.on_wm_receivesise(lParam))
         elif wParam == CA_RECEIVEMESSAGE:  # 상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)
-            self.on_wm_receivemessage(lParam)
+            self.response.append(self.on_wm_receivemessage(lParam))
+            win32gui.PostQuitMessage(0)
         elif wParam == CA_RECEIVECOMPLETE:  # 서비스 처리 완료
             print("서비스 처리 완료")
             win32gui.PostQuitMessage(0)  # mfc 메시지 루프 종료 (메시지를 받고 종료 처리 뒷 프로세스 실행을 위함)
@@ -170,7 +175,7 @@ class NamuhWindow:
             msg_cd = msg_header.msg_cd.decode("cp949")
             user_msg = msg_header.user_msg.decode("cp949")
             print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.TrIndex, msg_cd, user_msg))
-            return f"{msg_cd} : {user_msg}"
+            return {msg_cd: user_msg}
         except Exception as e:
             print("on_wm_receivemessage Exception = ", e)
 
@@ -197,7 +202,7 @@ class NamuhWindow:
     def set_is_hts(self, is_hts):
         self.is_hts = is_hts
 
-        if is_hts.lower() == "true":  # 모의투자일 경우
+        if is_hts:  # 모의투자일 경우
             wmca_server = "newmt.wontrading.com"
             wmca_port = "8400"
         else:  # 실투자일 경우
@@ -221,9 +226,9 @@ class NamuhWindow:
 
     def request_query(self, param):  # 증권사에 정보 조회
         for node in json.loads(param):
-            self.on_command(node)
-            self.response = []
-            win32gui.PumpMessages()  # MFC 메시지 수집
+            if self.on_command(node):
+                self.response = []
+                win32gui.PumpMessages()  # MFC 메시지 수집
         print("success")
         return json.dumps(self.response)
 
