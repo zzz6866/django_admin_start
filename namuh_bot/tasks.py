@@ -10,7 +10,7 @@ from django.forms import model_to_dict
 from mirage.crypto import Crypto
 
 from alldev.settings.base import SECRET_KEY
-from namuh_bot.models import Proc, CD
+from namuh_bot.models import Proc, CD, ProcOrder
 from namuh_bot.namuh_structure import C8102InBlockStruct
 
 logger = get_task_logger(__name__)
@@ -76,10 +76,12 @@ def request_bot(proc):  # 봇에 데이터 요청
     if proc.type_code == 'A':  # 상장 종목 조회
         param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'p1005', 'szInput': '1', 'nInputLen': 1, 'nAccountIndex': 0}})  # 종목 코드 조회 쿼리
     elif proc.type_code == 'B':  # 체결 및 모니터링
-        orders = proc.procorder_set.all().values()
-        for order in orders:
+        orders = proc.procorder_set.all()
+        for order in orders.values():
+            procaaaa = ProcOrder(id=order['id'], is_buy=order['is_buy'])
+            procaaaa.save()
             if order['is_buy']:  # 구매 후 단가 체크
-                 param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c1101', 'szInput': 'K ' + order['buy_cd_id'] + ' ', 'nInputLen': 8, 'nAccountIndex': 0}})  # 구매 및 시세 조회 쿼리
+                param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c1101', 'szInput': 'K ' + order['buy_cd_id'] + ' ', 'nInputLen': 8, 'nAccountIndex': 0}})  # 구매 및 시세 조회 쿼리
             else:  # 구매 처리 (미구매 상태)
                 order['account_pw'] = proc_login['account_pw']
                 struct = C8102InBlockStruct(order)
