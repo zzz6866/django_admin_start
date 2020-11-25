@@ -77,13 +77,11 @@ def request_bot(proc):  # 봇에 데이터 요청
         param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'p1005', 'szInput': '1', 'nInputLen': 1, 'nAccountIndex': 0}})  # 종목 코드 조회 쿼리
     elif proc.type_code == 'B':  # 체결 및 모니터링
         orders = proc.procorder_set.all()
-        for order in orders.values():
-            procaaaa = ProcOrder(id=order['id'], is_buy=order['is_buy'])
-            procaaaa.save()
-            if order['is_buy']:  # 구매 후 단가 체크
-                param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c1101', 'szInput': 'K ' + order['buy_cd_id'] + ' ', 'nInputLen': 8, 'nAccountIndex': 0}})  # 구매 및 시세 조회 쿼리
+        for order in orders:
+            if order.is_buy:  # 구매 후 단가 체크
+                param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c1101', 'szInput': 'K ' + order.buy_cd_id + ' ', 'nInputLen': 8, 'nAccountIndex': 0}})  # 구매 및 시세 조회 쿼리
             else:  # 구매 처리 (미구매 상태)
-                order['account_pw'] = proc_login['account_pw']
+                order.account_pw = proc_login['account_pw']
                 struct = C8102InBlockStruct(order)
                 param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c8102', 'szInput': struct.get_bytes(), 'nInputLen': sizeof(struct), 'nAccountIndex': 1}})  # 매수
     else:
