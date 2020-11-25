@@ -2,6 +2,10 @@
 from ctypes import *
 from ctypes.wintypes import *
 
+from mirage.crypto import Crypto
+
+from alldev.settings.base import SECRET_KEY
+
 """
 AGENT MODEL START
 """
@@ -35,7 +39,6 @@ ON_TASKBAR_NOTIFY = WM_USER + 20
 
 # windows tray
 MENU_EXIT = 1025
-
 
 INPUT_PARM, OUTPUT_PARAM, INPUT_PARM_DEFAULT_ZERO = 1, 2, 4
 
@@ -106,6 +109,8 @@ class StructBase(object):
 
 
 class StructByteBase(StructBase):  # 데이터 구조체가 +1byte 추가된 경우 끝을 짤라서 반환
+    _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
+
     def get_str(self, field_name):
         value = object.__getattribute__(self, field_name)
         if len(value) > 0:
@@ -125,14 +130,12 @@ class StructByteBase(StructBase):  # 데이터 구조체가 +1byte 추가된 경
 
 
 class MsgHeaderStruct(LittleEndianStructure, StructBase):
-    _pack_ = 1
     _fields_ = [('msg_cd', CHAR * 5),
                 ('user_msg', CHAR * 80)
                 ]
 
 
 class ReceivedStruct(LittleEndianStructure, StructBase):
-    _pack_ = 1
     _fields_ = [('szBlockName', LPSTR),
                 ('szData', LPSTR),
                 ('nLen', INT)
@@ -140,14 +143,12 @@ class ReceivedStruct(LittleEndianStructure, StructBase):
 
 
 class OutdatablockStruct(LittleEndianStructure, StructBase):
-    _pack_ = 1
     _fields_ = [('TrIndex', INT),
                 ('pData', POINTER(ReceivedStruct))
                 ]
 
 
 class C1101OutBlockStruct(LittleEndianStructure, StructByteBase):
-    _pack_ = 1
     _fields_ = [("code", CHAR * (6 + 1)),  # 종목코드
                 ("hname", CHAR * (13 + 1)),  # 종목명
                 ("price", CHAR * (7 + 1)),  # 현재가
@@ -320,7 +321,6 @@ class C1101OutBlockStruct(LittleEndianStructure, StructByteBase):
 
 
 class C1101OutBlock2Struct(LittleEndianStructure, StructByteBase):
-    _pack_ = 1
     _fields_ = [("time", CHAR * (8 + 1)),  # 시간
                 ("price", CHAR * (7 + 1)),  # 현재가
                 ("sign", CHAR * (1 + 1)),  # 등락부호
@@ -333,7 +333,6 @@ class C1101OutBlock2Struct(LittleEndianStructure, StructByteBase):
 
 
 class C1101OutBlock3Struct(LittleEndianStructure, StructByteBase):
-    _pack_ = 1
     _fields_ = [("dongsi", CHAR * (1 + 1)),  # 동시호가구분
                 ("jeqprice", CHAR * (7 + 1)),  # 예상체결가
                 ("jeqsign", CHAR * (1 + 1)),  # 예상체결부호
@@ -353,7 +352,6 @@ class C1101OutBlock3Struct(LittleEndianStructure, StructByteBase):
 
 
 class C4113OutKospi200Struct(LittleEndianStructure, StructBase):
-    _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [("fuitem", CHAR * (8 + 1)),  # 종목코드
                 ("fucurr", CHAR * (5 + 1)),  # 현물지수
                 ("fusign", CHAR * (1 + 1)),  # 전일비부호
@@ -366,7 +364,6 @@ class C4113OutKospi200Struct(LittleEndianStructure, StructBase):
 
 
 class P1005OutBlockStruct(LittleEndianStructure, StructByteBase):
-    _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("code", CHAR * (6 + 1)),  # 단축코드
         ("expcode", CHAR * (12 + 1)),  # KRX코드
@@ -375,7 +372,6 @@ class P1005OutBlockStruct(LittleEndianStructure, StructByteBase):
 
 
 class J8OutBlockStruct(LittleEndianStructure, StructBase):
-    _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("code", (CHAR * 6)),  # 종목코드
         ("time", (CHAR * 8)),  # 시간
@@ -398,7 +394,6 @@ class J8OutBlockStruct(LittleEndianStructure, StructBase):
 
 
 class K8OutBlockStruct(LittleEndianStructure, StructBase):
-    _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("code", (CHAR * 6)),  # 종목코드
         ("time", (CHAR * 8)),  # 시간
@@ -421,7 +416,6 @@ class K8OutBlockStruct(LittleEndianStructure, StructBase):
 
 
 class D2OutBlockStruct(LittleEndianStructure, StructBase):
-    _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("userid", (CHAR * 8)),  # 사용자ID
         ("itemgb", (CHAR * 1)),  # ITEM구분
@@ -443,7 +437,6 @@ class D2OutBlockStruct(LittleEndianStructure, StructBase):
 
 
 class D3OutBlockStruct(LittleEndianStructure, StructBase):
-    _pack_ = 1  # 데이터 반환이 byte 단위로 들어오기 때문에 필드(fields) 순서대로 받아야 함
     _fields_ = [
         ("userid", (CHAR * 8)),  # USERID
         ("itemgb", (CHAR * 1)),  # ITEM구분
@@ -464,6 +457,51 @@ class D3OutBlockStruct(LittleEndianStructure, StructBase):
         ("sin_gb", (CHAR * 2)),  # 신용구분
         ("order_time", (CHAR * 6)),  # 주문시간
         ("loan_date", (CHAR * 8)),  # 대출일자
+    ]
+
+
+class C8101InBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매도 주문 input
+    _fields_ = [
+        ("pswd_noz8", CHAR * 44),  # 계좌비밀번호
+        ("issue_codez6", CHAR * 6),  # 종목번호
+        ("order_qtyz12", CHAR * 12),  # 주문수량
+        ("order_unit_pricez10", CHAR * 10),  # 주문단가
+        ("trade_typez2", CHAR * 2),  # 매매유형 : 00 보통가, 03 시장가, 05 조건부지정가, 12 최유리지정가, 13 최우선지정가, 31 시간외단일가, 61 장전시간외, 71 장후시간외, C0 IOC보통가 (즉시체결.잔량취소), F0 FOK보통가 (전량체결.전량취소), C3 IOC시장가 (즉시체결.잔량취소), F3 FOK시장가 (전량체결.전량취소), C2 IOC최유리 (즉시체결.잔량취소), F2 FOK최유리 (전량체결.전량취소)
+        ("shsll_pos_flagz1", CHAR * 1),  # 공매도가능여부
+        ("trad_pswd_no_1z8", CHAR * 44),  # 거래비밀번호1
+        ("trad_pswd_no_2z8", CHAR * 44),  # 거래비밀번호2
+    ]
+
+
+class C8101OutBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매도 주문 output
+    _fields_ = [
+        ("order_noz10", CHAR * 10),  # 주문번호
+        ("order_qtyz12", CHAR * 12),  # 주문수량
+        ("order_unit_pricez10", CHAR * 10),  # 주문단가
+    ]
+
+
+class C8102InBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매수 주문 input
+    _fields_ = [
+        ("pswd_noz8", CHAR * 44),  # 계좌비밀번호
+        ("issue_codez6", CHAR * 6),  # 종목번호
+        ("order_qtyz12", CHAR * 12),  # 주문수량
+        ("order_unit_pricez10", CHAR * 10),  # 주문단가
+        ("trade_typez2", CHAR * 2),  # 매매유형 : 00 보통가, 03 시장가, 05 조건부지정가, 12 최유리지정가, 13 최우선지정가, 31 시간외단일가, 61 장전시간외, 71 장후시간외, C0 IOC보통가 (즉시체결.잔량취소), F0 FOK보통가 (전량체결.전량취소), C3 IOC시장가 (즉시체결.잔량취소), F3 FOK시장가 (전량체결.전량취소), C2 IOC최유리 (즉시체결.잔량취소), F2 FOK최유리 (전량체결.전량취소)
+        ("trad_pswd_no_1z8", CHAR * 44),  # 거래비밀번호1
+        ("trad_pswd_no_2z8", CHAR * 44),  # 거래비밀번호2
+    ]
+
+    def __init__(self, dict_data):
+        # print(dict_data)
+        super().__init__(dict_data['account_pw'].encode('utf-8'), dict_data['buy_cd_id'].encode('utf-8'), str(dict_data['buy_qty']).encode('utf-8'), str(dict_data['buy_price']).encode('utf-8'), b'00', b'', b'')
+
+
+class C8102OutBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매수 주문 output
+    _fields_ = [
+        ("order_noz10", CHAR * 10),  # 주문번호
+        ("order_qtyz12", CHAR * 12),  # 주문수량
+        ("order_unit_pricez10", CHAR * 10),  # 주문단가
     ]
 
 

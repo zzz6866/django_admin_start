@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from django.forms import PasswordInput
 from nested_inline.admin import *
 
 from .models import *
@@ -110,9 +111,20 @@ class ProcAdmin(NestedModelAdmin):
         ]
 
 
+class ProcLoginForm(forms.ModelForm):
+    class Meta:
+        widgets = {
+            'sz_pw': PasswordInput(render_value=True),
+            'sz_cert_pw': PasswordInput(render_value=True),
+            'account_pw': PasswordInput(render_value=True),
+        }
+
+
 @admin.register(ProcLogin)
 class ProcLoginAdmin(admin.ModelAdmin):
     # def get_model_perms(self, request):  # 모델 리스트에서 제외, proc 상세 뷰에서 추가 및 수정 처리 함
     #     return {}
+    form = ProcLoginForm
+
     def has_module_permission(self, request):  # 모델 리스트에서 제외, proc 상세 뷰에서 추가 및 수정 처리 함
         return False

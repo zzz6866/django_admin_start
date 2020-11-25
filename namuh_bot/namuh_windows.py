@@ -173,7 +173,7 @@ class NamuhWindow:
             string_buffer = create_string_buffer(pData.szData[:85], 85)
             msg_header = MsgHeaderStruct.from_buffer(string_buffer)
             msg_cd = msg_header.msg_cd.decode("cp949")
-            user_msg = msg_header.user_msg.decode("cp949")
+            user_msg = msg_header.user_msg.decode("cp949").strip()
             print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.TrIndex, msg_cd, user_msg))
             return {msg_cd: user_msg}
         except Exception as e:

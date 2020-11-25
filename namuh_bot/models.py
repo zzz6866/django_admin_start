@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from django.core.validators import RegexValidator
 from django.db import models
+from mirage import fields
 from mptt.models import MPTTModel
 
 
@@ -19,6 +20,11 @@ class CD(models.Model):
     nm = models.CharField(max_length=100, verbose_name='종목명')
 
 
+class EncryptedCharFieldNotDecrypt(fields.EncryptedCharField):  # 복호화 방지 class
+    def from_db_value(self, value, expression, connection, *args):
+        return value
+
+
 class ProcLogin(models.Model):
     def __str__(self):
         return self.name + ' - ' + self.sz_id
@@ -30,9 +36,10 @@ class ProcLogin(models.Model):
 
     name = models.CharField(max_length=15, verbose_name='별칭')  # 명칭
     sz_id = models.CharField(max_length=15, verbose_name='로그인 ID')  # 로그인 ID
-    sz_pw = models.CharField(max_length=15, verbose_name='로그인 PW')  # 로그인 PW
-    sz_cert_pw = models.CharField(max_length=15, verbose_name='인증서 PW')  # 인증서 PW
-    is_hts = models.BooleanField(default=True, verbose_name='모의투자 여부')  # 완료 유무
+    sz_pw = fields.EncryptedCharField(verbose_name='로그인 PW', null=False)  # models.CharField(max_length=15, verbose_name='로그인 PW')  # 로그인 PW
+    sz_cert_pw = fields.EncryptedCharField(verbose_name='인증서 PW', null=False)  # models.CharField(max_length=15, verbose_name='인증서 PW')  # 인증서 PW
+    account_pw = fields.EncryptedCharField(verbose_name='계좌 PW', null=False, default='')  # 계좌 비밀번호
+    is_hts = models.BooleanField(default=True, verbose_name='모의투자 여부', null=False)  # 완료 유무
 
 
 PROC_TYPE_KEY = (
