@@ -30,4 +30,5 @@ urlpatterns = [
     # url(r'^coin/', include('coin_bot.urls')), # 미사용 주석처리
     url(r'^torrent/', include('torrent_bot.urls')),
     url(r'^front/', include('front.urls')),
+    url(r'^namuh_bot/', include('namuh_bot.urls')),
 ]

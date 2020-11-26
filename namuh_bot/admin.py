@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from dal import autocomplete
 from django.forms import PasswordInput
 from nested_inline.admin import *
 
@@ -60,55 +61,33 @@ class SelectOptionAddAttribute(forms.Select):  # select option 태그에 attr �
             'template_name': self.option_template_name,
         }
 
-
-# CHOICES_LEVEL = {
-#     'query': {'data-level': '1'},
-#     'attach': {'data-level': '2'},
-#     'connect': {'data-level': '3'},
-#     'disconnect': {'data-level': '4'},
-#     # 구분선 (위 req_id , 아래 param)
-#     'is_hts': {'data-level': '3'},
-#     'sz_id': {'data-level': '3'},
-#     'sz_pw': {'data-level': '3'},
-#     'sz_cert_pw': {'data-level': '3'},
-#     'nInputLen': {'data-level': '1'},
-#     'nCodeLen': {'data-level': '1'},
-#     'szInput': {'data-level': '1'},
-#     'szBCType': {'data-level': '1'},
-#     'szTRCode': {'data-level': '1'},
-#     'nTRID': {'data-level': '1'},
-# }
-
-
 class ProcValidFormInline(NestedTabularInline):
     model = ProcValid
     # form = ProcDtlValForm
     extra = 1
+    max_num = 2
     fk_name = 'parent'
 
 
-class ProcOrderFormInline(NestedTabularInline):
+class ProcOrderForm(forms.ModelForm):
+    buy_cd = forms.ModelChoiceField(queryset=CD.objects.all(), widget=autocomplete.ModelSelect2(url='/namuh_bot/cd-autocompleteView/'))
+
+
+class ProcOrderFormInline(admin.TabularInline):
     model = ProcOrder
-    # form = ProcOrderForm
+    form = ProcOrderForm
     extra = 1
+    max_num = 1
     fk_name = 'parent'
     inlines = [ProcValidFormInline]
 
-    # def __str__(self):
-    #     return ''
-
 
 @admin.register(Proc)
-class ProcAdmin(NestedModelAdmin):
+class ProcAdmin(admin.ModelAdmin):
     list_display = ['name', 'status']
     list_display_links = ['name']
     exclude = ['proc_type']
     inlines = [ProcOrderFormInline]
-
-    class Media:
-        js = [
-            'forms/js/select_stock_proc.js',
-        ]
 
 
 class ProcLoginForm(forms.ModelForm):

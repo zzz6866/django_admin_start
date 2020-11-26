@@ -40,6 +40,8 @@ INSTALLED_APPS = [
     'nested_inline',
     'django_celery_beat',
     'django_celery_results',
+    'dal',
+    'dal_select2',
 ]
 
 MIDDLEWARE = [
