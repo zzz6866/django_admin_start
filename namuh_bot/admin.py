@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from dal import autocomplete
+from django import forms
+from django.contrib import admin
 from django.forms import PasswordInput
-from nested_inline.admin import *
+from nested_admin.nested import NestedTabularInline, NestedModelAdmin
 
 from .models import *
 
@@ -61,10 +63,10 @@ class SelectOptionAddAttribute(forms.Select):  # select option 태그에 attr �
             'template_name': self.option_template_name,
         }
 
+
 class ProcValidFormInline(NestedTabularInline):
     model = ProcValid
     # form = ProcDtlValForm
-    extra = 1
     max_num = 2
     fk_name = 'parent'
 
@@ -73,17 +75,16 @@ class ProcOrderForm(forms.ModelForm):
     buy_cd = forms.ModelChoiceField(queryset=CD.objects.all(), widget=autocomplete.ModelSelect2(url='/namuh_bot/cd-autocompleteView/'))
 
 
-class ProcOrderFormInline(admin.TabularInline):
+class ProcOrderFormInline(NestedTabularInline):
     model = ProcOrder
     form = ProcOrderForm
-    extra = 1
     max_num = 1
     fk_name = 'parent'
     inlines = [ProcValidFormInline]
 
 
 @admin.register(Proc)
-class ProcAdmin(admin.ModelAdmin):
+class ProcAdmin(NestedModelAdmin):
     list_display = ['name', 'status']
     list_display_links = ['name']
     exclude = ['proc_type']
