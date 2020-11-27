@@ -260,7 +260,7 @@ class NamuhWindow:
             #     print("'" + szData.get_str("code") + "'")
             #     print("'" + szData.get_str("hname") + "'")
 
-            json_dump = {szBlockName: [data.getdict() for data in szData]}
+            json_dump = {szBlockName: [data.get_dict() for data in szData]}
 
             return json_dump
         except Exception as e:
