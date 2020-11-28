@@ -117,7 +117,12 @@ class StructByteBase(StructBase):  # 데이터 구조체가 +1byte 추가된 경
             if value[:-1].decode("cp949").isdigit() and value[-1:] != b" ":
                 return int(value[:-1].decode("cp949"))
             else:  # if value[-1:] == b" ":  # 끝이 공백 일 경우 문자열 -1 제거 후 반환
-                return str(value[:-1].decode("cp949")).strip()
+                sign_byte = b'\x18\x1E\x20\x19\x1F'  # 등가부호 처리(복호화 불가로 인한 처리 필요)
+                if not value[:-1] in sign_byte:
+                    return str(value[:-1].decode("cp949")).strip()
+                else:
+                    sign_char = ['▲', '▲', '-', '▼', '▼']  # 등락부호 처리
+                    return sign_char[sign_byte.find(value[-1:])]
         else:  # 0byte일 경우 공백 반환
             return ""
 

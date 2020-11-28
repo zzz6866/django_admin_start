@@ -67,6 +67,7 @@ class SelectOptionAddAttribute(forms.Select):  # select option 태그에 attr �
 class ProcValidFormInline(NestedTabularInline):
     model = ProcValid
     # form = ProcDtlValForm
+    exclude = ['max_plus_value']
     max_num = 2
     fk_name = 'parent'
 

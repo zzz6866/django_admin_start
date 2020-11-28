@@ -241,16 +241,20 @@ class NamuhWindow:
             szBlockName = pData.szBlockName.decode("cp949")
 
             struct_type = None
-            if szBlockName == "c1101OutBlock":
+            if szBlockName == 'c1101OutBlock':
                 struct_type = (C1101OutBlockStruct * 1)
-            elif szBlockName == "c1101OutBlock2":
+            elif szBlockName == 'c1101OutBlock2':
                 struct_type = (C1101OutBlock2Struct * (nLen // sizeof(C1101OutBlock2Struct)))
-            elif szBlockName == "c1101OutBlock3":
+            elif szBlockName == 'c1101OutBlock3':
                 struct_type = (C1101OutBlock3Struct * 1)
-            elif szBlockName == "c4113OutKospi200":
+            elif szBlockName == 'c4113OutKospi200':
                 struct_type = (C4113OutKospi200Struct * 1)
-            elif szBlockName == "p1005OutBlock":
+            elif szBlockName == 'p1005OutBlock':
                 struct_type = (P1005OutBlockStruct * (nLen // sizeof(P1005OutBlockStruct)))
+            elif szBlockName == 'c8102InBlock':
+                struct_type = (C8102InBlockStruct * 1)
+            elif szBlockName == 'c8102OutBlock':
+                struct_type = (C8102OutBlockStruct * 1)
 
             szData = struct_type.from_buffer(string_buffer)
 

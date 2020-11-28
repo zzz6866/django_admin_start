@@ -91,5 +91,15 @@ class ProcValid(models.Model):
 
     parent = models.ForeignKey(ProcOrder, blank=False, default=None, verbose_name='상위 번호', on_delete=models.CASCADE)
     is_noon = models.CharField(max_length=2, verbose_name='오전/오후 구분', choices=(('AM', '오전'), ('PM', '오후')))
-    limit_value = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0, verbose_name='익절 값')
-    limit_type_code = models.CharField(max_length=2, verbose_name='익절 타입', choices=(('P', '%'), ('W', '원')))
+    plus_value = models.FloatField(validators=[RegexValidator(r'^[0-9]+\.?[0-9]+$')], default=0, verbose_name='익절 값')
+    plus_type_code = models.CharField(max_length=2, verbose_name='익절 타입', choices=(('P', '%'), ('W', '원')))
+    max_plus_value = models.IntegerField(validators=[RegexValidator(r'^[0-9]+$')], default=0, verbose_name='최종 익절 가격')
+
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        # db에 미리 계산 처리 하여 값 비교시 따로 계산하지 않도록 처리(리소스 낭비 방지)
+        if self.plus_type_code == 'P':  # 정률
+            self.max_plus_value = int(self.parent.buy_price + (self.parent.buy_price * self.plus_value / 100))
+        elif self.plus_type_code == 'W':  # 정액
+            self.max_plus_value = int(self.plus_value + self.parent.buy_price)
+
+        super().save(force_insert, force_update, using, update_fields)

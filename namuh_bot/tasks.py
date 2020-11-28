@@ -7,10 +7,8 @@ import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.forms import model_to_dict
-from mirage.crypto import Crypto
 
-from alldev.settings.base import SECRET_KEY
-from namuh_bot.models import Proc, CD, ProcOrder
+from namuh_bot.models import Proc, CD
 from namuh_bot.namuh_structure import C8102InBlockStruct
 
 logger = get_task_logger(__name__)
@@ -67,8 +65,23 @@ def get_today_flip_order():  # 금일 단타 주문
             # logger.debug(response.json())  # validation check
             # if any('c1101OutBlock2' in d for d in response.json()):
             #     cd_list = response.json()[0]['p1005OutBlock']
-            for data in response.json():
-                logger.debug(data)
+            if order.is_buy:  # 종가 단가 체크 후 조건 충족시 매도 처리
+                if any('c1101OutBlock2' in d for d in response.json()):
+                    c1101OutBlock2 = find_json_elemnt(items=response.json(), name='c1101OutBlock2')
+                    logger.debug(f"{c1101OutBlock2[0].get('time')} => {c1101OutBlock2[0].get('price')}")
+                    valid = order.procvalid_set.all()
+                    for item in c1101OutBlock2:
+                        if item.get('price') > valid.max_plus_value:
+                            logger.debug('sell')
+                        else:
+                            logger.debug('not sell')
+
+            else:
+                if any('c8102OutBlock' in d for d in response.json()):  # 체결 완료 처리(이후 가격 체크)
+                    c8102OutBlock = find_json_elemnt(items=response.json(), name='c8102OutBlock')
+                    if c8102OutBlock.order_noz10 != '':
+                        order.is_buy = True
+                        order.save()
 
     logger.info("get_today_flip_order END !!!!")
 
@@ -77,8 +90,18 @@ def request_bot(param):  # 봇에 데이터 요청
     headers = {'Content-Type': 'application/json; charset=utf-8'}
     url = 'http://localhost:10003/namuh_windows'
 
-    logger.debug(param)
+    # logger.debug(param)
     response = requests.post(url, headers=headers, json=param)
 
     logger.info(f"status_code : {response.status_code}")
     return response
+
+
+# for (k, v) in data.items():
+#    print("Key: " + k)
+#    print("Value: " + str(v))
+def find_json_elemnt(items, name):
+    for data in items:
+        if any(name == d for d in data):
+            return data.get(name, None)
+    return None
