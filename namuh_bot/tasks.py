@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import time
 from ctypes import sizeof
 
 import requests
@@ -67,21 +68,29 @@ def get_today_flip_order():  # 금일 단타 주문
             #     cd_list = response.json()[0]['p1005OutBlock']
             if order.is_buy:  # 종가 단가 체크 후 조건 충족시 매도 처리
                 if any('c1101OutBlock2' in d for d in response.json()):
-                    c1101OutBlock2 = find_json_elemnt(items=response.json(), name='c1101OutBlock2')
-                    logger.debug(f"{c1101OutBlock2[0].get('time')} => {c1101OutBlock2[0].get('price')}")
-                    valid = order.procvalid_set.all()
-                    for item in c1101OutBlock2:
-                        if item.get('price') > valid.max_plus_value:
-                            logger.debug('sell')
-                        else:
-                            logger.debug('not sell')
+                    out_block = find_json_elemnt(items=response.json(), name='c1101OutBlock2')
+                    is_noon = time.strftime("%p")
+                    logger.debug(f"{is_noon} : {out_block[0].get('time')} => {out_block[0].get('price')}")
+                    valid = order.procvalid_set.get(is_noon=is_noon)
+                    if valid:
+                        for item in out_block:
+                            if item.get('price') > valid.max_plus_value:
+                                logger.debug('sell')
+                                return  # 매도 처리
+                            else:
+                                logger.debug('not sell')
+                    else:
+                        logger.debug(f'no vaild : {is_noon}')
 
-            else:
+            else:  # 매수 요청 후 결과 처리
                 if any('c8102OutBlock' in d for d in response.json()):  # 체결 완료 처리(이후 가격 체크)
-                    c8102OutBlock = find_json_elemnt(items=response.json(), name='c8102OutBlock')
-                    if c8102OutBlock.order_noz10 != '':
+                    out_block = find_json_elemnt(items=response.json(), name='c8102OutBlock')[0]
+                    if out_block['order_noz10'] != '':
                         order.is_buy = True
                         order.save()
+                    else:
+                        result_msg = find_json_elemnt(items=response.json(), name='00000')
+                        logger.debug('not buy!!! %s' % result_msg)
 
     logger.info("get_today_flip_order END !!!!")
 

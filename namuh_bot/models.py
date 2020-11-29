@@ -88,6 +88,9 @@ class ProcValid(models.Model):
         # Add verbose name
         verbose_name_plural = '조건식 입력'
         verbose_name = '조건식 입력'
+        constraints = [
+            models.UniqueConstraint(fields=['parent', 'is_noon'], name="parent-is_noon")  # 조건부 유니크 값 설정 중복 저장 방지
+        ]
 
     parent = models.ForeignKey(ProcOrder, blank=False, default=None, verbose_name='상위 번호', on_delete=models.CASCADE)
     is_noon = models.CharField(max_length=2, verbose_name='오전/오후 구분', choices=(('AM', '오전'), ('PM', '오후')))

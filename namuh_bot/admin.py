@@ -82,6 +82,7 @@ class ProcOrderFormInline(NestedTabularInline):
     max_num = 1
     fk_name = 'parent'
     inlines = [ProcValidFormInline]
+    readonly_fields = ['is_buy']
 
 
 @admin.register(Proc)
