@@ -70,27 +70,33 @@ def get_today_flip_order():  # 금일 단타 주문
                 if any('c1101OutBlock2' in d for d in response.json()):
                     out_block = find_json_elemnt(items=response.json(), name='c1101OutBlock2')
                     is_noon = time.strftime("%p")
-                    logger.debug(f"{is_noon} : {out_block[0].get('time')} => {out_block[0].get('price')}")
-                    valid = order.procvalid_set.get(is_noon=is_noon)
+                    valid = order.procvalid_set.filter(is_noon=is_noon)
                     if valid:
+                        logger.debug(f"max_plus_value = {valid[0].max_plus_value}")
                         for item in out_block:
-                            if item.get('price') > valid.max_plus_value:
+                            logger.debug(f"{is_noon} : {item.get('time')} => {item.get('price')}")
+                            if item.get('price') > valid[0].max_plus_value:
                                 logger.debug('sell')
                                 return  # 매도 처리
                             else:
                                 logger.debug('not sell')
                     else:
                         logger.debug(f'no vaild : {is_noon}')
-
+                else:  # 결과 메시지 처리
+                    result_msg = find_json_elemnt(items=response.json(), name='00000')
+                    logger.debug('not buy!!! %s' % result_msg)
             else:  # 매수 요청 후 결과 처리
                 if any('c8102OutBlock' in d for d in response.json()):  # 체결 완료 처리(이후 가격 체크)
                     out_block = find_json_elemnt(items=response.json(), name='c8102OutBlock')[0]
-                    if out_block['order_noz10'] != '':
+                    if out_block['order_noz10'].strip() != '':
                         order.is_buy = True
                         order.save()
                     else:
                         result_msg = find_json_elemnt(items=response.json(), name='00000')
                         logger.debug('not buy!!! %s' % result_msg)
+                else:
+                    result_msg = find_json_elemnt(items=response.json(), name='00001')
+                    logger.debug('result !!! %s' % result_msg)
 
     logger.info("get_today_flip_order END !!!!")
 

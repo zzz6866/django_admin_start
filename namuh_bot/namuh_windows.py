@@ -69,6 +69,7 @@ class NamuhWindow:
         self.create_tray_icons()  # 트레이 아이콘 생성
 
         self.wmca = WinDllWmca()  # 모바일증권 나무 DLL 로드
+        self.wmca.set_order_pwd('', '')
         print("NamuhWindow START!")
 
     def create_tray_icons(self):  # 트레이 아이콘 생성
@@ -374,6 +375,13 @@ class WinDllWmca:
         func.restype = BOOL
         result = func()
         # print("free =", bool(result))
+        return bool(result)
+
+    def set_order_pwd(self, szHashOut44, szPwd):  # dll 거래 비밀번호 셋팅
+        func = self.wmca_dll.wmcaSetOrderPwd
+        func.argtypes = [LPSTR, LPSTR]
+        func.restype = BOOL
+        result = func(szHashOut44, szPwd)
         return bool(result)
 
 

@@ -465,7 +465,7 @@ class D3OutBlockStruct(LittleEndianStructure, StructBase):
     ]
 
 
-class C8101InBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매도 주문 input
+class C8101InBlockStruct(LittleEndianStructure, StructBase):  # 주식매도 주문 input
     _fields_ = [
         ("pswd_noz8", CHAR * 44),  # 계좌비밀번호
         ("issue_codez6", CHAR * 6),  # 종목번호
@@ -478,7 +478,7 @@ class C8101InBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매도
     ]
 
 
-class C8101OutBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매도 주문 output
+class C8101OutBlockStruct(LittleEndianStructure, StructBase):  # 주식매도 주문 output
     _fields_ = [
         ("order_noz10", CHAR * 10),  # 주문번호
         ("order_qtyz12", CHAR * 12),  # 주문수량
@@ -486,7 +486,7 @@ class C8101OutBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매�
     ]
 
 
-class C8102InBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매수 주문 input
+class C8102InBlockStruct(LittleEndianStructure, StructBase):  # 주식매수 주문 input
     _fields_ = [
         ("pswd_noz8", CHAR * 44),  # 계좌비밀번호
         ("issue_codez6", CHAR * 6),  # 종목번호
@@ -504,7 +504,7 @@ class C8102InBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매수
             super().__init__(dict_data.account_pw.encode('utf-8'), dict_data.buy_cd_id.encode('utf-8'), str(dict_data.buy_qty).encode('utf-8'), str(dict_data.buy_price).encode('utf-8'), b'00', b'', b'')
 
 
-class C8102OutBlockStruct(LittleEndianStructure, StructByteBase):  # 주식매수 주문 output
+class C8102OutBlockStruct(LittleEndianStructure, StructBase):  # 주식매수 주문 output
     _fields_ = [
         ("order_noz10", CHAR * 10),  # 주문번호
         ("order_qtyz12", CHAR * 12),  # 주문수량
