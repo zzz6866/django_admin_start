@@ -26,7 +26,9 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
     def request_post_mapping(self):  # post path mapping
         request_map = urlparse(self.path)
         if request_map.path == '/namuh_windows':
-            self.namuh_windows(request_map.query)
+            self.namuh_windows()
+        elif request_map.path == '/encode_hash':
+            self.encode_hash()
         else:
             self.reponse_404_not_found()
 
@@ -34,7 +36,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
         # HTTP status 200
         self.response(200, 'hello : test')
 
-    def namuh_windows(self, query):  #
+    def namuh_windows(self):  # DDL 요청
         content_len = int(self.headers.get('content-length', 0))
         body = self.rfile.read(content_len).decode('utf-8')
         # HTTP response status 200
@@ -54,6 +56,13 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
 
         # send body
         self.wfile.write(str(body).encode('utf-8'))
+
+    def encode_hash(self):  # 거래비밀번호, 계좌비밀번호 등 암호화 처리
+        content_len = int(self.headers.get('content-length', 0))
+        body = self.rfile.read(content_len).decode('utf-8')
+        # HTTP response status 200
+        res = self.namuh.encode_hash(body)
+        self.response(200, res)
 
 
 if __name__ == '__main__':

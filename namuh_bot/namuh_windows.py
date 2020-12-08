@@ -100,12 +100,12 @@ class NamuhWindow:
             # but keep running anyway - when explorer starts, we get the
             # TaskbarCreated message.
 
-    def on_command(self, json):
-        req_id = json["req_id"]
+    def on_command(self, json_data):
+        req_id = json_data["req_id"]
 
         if req_id == "connect":
             print("로그인 시도")
-            connect = json["param"]
+            connect = json_data["param"]
             self.sz_id = connect["sz_id"].encode()
             self.sz_pw = connect["sz_pw"].encode()
             self.sz_cert_pw = connect["sz_cert_pw"].encode()
@@ -117,7 +117,7 @@ class NamuhWindow:
 
         elif req_id == "query":
             print("일회성 조회")
-            query = json["param"]
+            query = json_data["param"]
 
             if self.wmca.is_connected():
                 return self.wmca.query(self.hwnd, query["nTRID"], query["szTRCode"], query["szInput"], query["nInputLen"], query["nAccountIndex"])  # nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0
@@ -126,7 +126,7 @@ class NamuhWindow:
                 return False
 
         elif req_id == "attach":
-            query = json["param"]
+            query = json_data["param"]
             self.wmca.detach_all()
             result = self.wmca.attach(self.hwnd, query["szBCType"], query["szInput"], query["nCodeLen"], query["nInputLen"])  # szBCType, szInput, nCodeLen, nInputLen
             print("실시간 시세 조회 = ", result)
@@ -290,6 +290,16 @@ class NamuhWindow:
         except Exception as e:
             print("on_wm_receivesise Exception = ", e)
 
+    def encode_hash(self, param):
+        json_data = json.loads(param)
+        hash_type = json_data['encode_type']
+        hash_res = create_string_buffer(44)
+        if hash_type == 'account':  # 계좌비밀번호 암호화
+            self.wmca.set_order_pwd(hash_res, json_data['encode_value'])
+        elif hash_type == 'order':  # 거래비밀번호 암호화
+            self.wmca.set_account_index_pwd(hash_res, "1", json_data['encode_value'])
+        return {"encode_value": hash_res.value.decode()}
+
 
 class WinDllWmca:
     def __init__(self):
@@ -379,19 +389,23 @@ class WinDllWmca:
         return bool(result)
 
     def set_order_pwd(self, pass_out, pass_in):  # dll 거래 비밀번호 셋팅
-        func = self.wmca_dll.wmcaSetOrderPwd
-        func.argtypes = [LPSTR, LPSTR]
+        # func = self.wmca_dll.wmcaSetOrderPwd
+        func = self.wmca_dll.wmcaSetHashPwd
+        func.argtypes = [LPSTR, LPSTR, LPSTR]
         func.restype = BOOL
-        result = func(pass_out, pass_in)
-        self.response.append(result)
+        # result = func(pass_out, pass_in)
+        result = func(pass_out, b'', pass_in.encode())
 
         return bool(result)
 
     def set_account_index_pwd(self, pass_out, account_index, pass_in):  # dll 계좌 비밀번호 셋팅
-        func = self.wmca_dll.wmcaSetAccountIndexPwd
-        func.argtypes = [c_char_p, INT, c_char_p]
+        # func = self.wmca_dll.wmcaSetAccountIndexPwd
+        # func.argtypes = [c_char_p, INT, c_char_p]
+        func = self.wmca_dll.wmcaSetAccountNoPwd
+        func.argtypes = [LPSTR, LPSTR, LPSTR]
         func.restype = BOOL
-        result = func(pass_out, account_index, pass_in)
+        # result = func(pass_out, account_index, pass_in)
+        result = func(pass_out, account_index.encode(), pass_in.encode())
 
         return bool(result)
 

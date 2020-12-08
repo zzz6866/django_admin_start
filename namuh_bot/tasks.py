@@ -54,7 +54,7 @@ def get_today_flip_order():  # 금일 단타 주문
         if not order:
             return None
         else:
-            if order.is_buy:  # 구매 후 단가 체크
+            if order.is_buy:  # 체결 여부 : 구매 후 단가 체크
                 param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c1101', 'szInput': 'K\x00' + order.buy_cd_id + '\x00', 'nInputLen': 8, 'nAccountIndex': 0}})  # 구매 및 시세 조회 쿼리
             else:  # 구매 처리 (미구매 상태)
                 order.account_pw = proc_login['account_pw']
