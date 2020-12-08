@@ -99,6 +99,7 @@ class ProcLoginForm(forms.ModelForm):
             'sz_pw': PasswordInput(render_value=True),
             'sz_cert_pw': PasswordInput(render_value=True),
             'account_pw': PasswordInput(render_value=True),
+            'trade_pw': PasswordInput(render_value=True),
         }
 
 

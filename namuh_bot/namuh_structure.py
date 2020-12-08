@@ -501,7 +501,7 @@ class C8102InBlockStruct(LittleEndianStructure, StructBase):  # 주식매수 주
         # print(dict_data)
         super().__init__()
         if dict_data:
-            super().__init__(dict_data.account_pw.encode('utf-8'), dict_data.buy_cd_id.encode('utf-8'), str(dict_data.buy_qty).encode('utf-8'), str(dict_data.buy_price).encode('utf-8'), b'00', b'', b'')
+            super().__init__(dict_data.account_pw.encode('utf-8'), dict_data.buy_cd_id.encode('utf-8'), str("%012d" % dict_data.buy_qty).encode('utf-8'), str("%010d" % dict_data.buy_price).encode('utf-8'), b'00', b'', b'')
 
 
 class C8102OutBlockStruct(LittleEndianStructure, StructBase):  # 주식매수 주문 output

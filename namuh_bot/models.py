@@ -35,10 +35,11 @@ class ProcLogin(models.Model):
         verbose_name = '로그인 정보'
 
     name = models.CharField(max_length=15, verbose_name='별칭')  # 명칭
-    sz_id = models.CharField(max_length=15, verbose_name='로그인 ID')  # 로그인 ID
-    sz_pw = fields.EncryptedCharField(verbose_name='로그인 PW', null=False)  # models.CharField(max_length=15, verbose_name='로그인 PW')  # 로그인 PW
-    sz_cert_pw = fields.EncryptedCharField(verbose_name='인증서 PW', null=False)  # models.CharField(max_length=15, verbose_name='인증서 PW')  # 인증서 PW
-    account_pw = fields.EncryptedCharField(verbose_name='계좌 PW', null=False, default='')  # 계좌 비밀번호
+    sz_id = models.CharField(max_length=15, verbose_name='로그인 아이디')  # 로그인 ID
+    sz_pw = fields.EncryptedCharField(verbose_name='로그인 비밀번호', null=False)  # models.CharField(max_length=15, verbose_name='로그인 PW')  # 로그인 PW
+    sz_cert_pw = fields.EncryptedCharField(verbose_name='인증서 비밀번호', null=False)  # models.CharField(max_length=15, verbose_name='인증서 비밀번호')  # 인증서 비밀번호
+    account_pw = fields.EncryptedCharField(verbose_name='계좌 비밀번호', null=False, default='')  # 계좌 비밀번호
+    trade_pw = fields.EncryptedCharField(verbose_name='거래 비밀번호', null=False, default='')  # 거래 비밀번호
     is_hts = models.BooleanField(default=True, verbose_name='모의투자 여부', null=False)  # 완료 유무
 
 

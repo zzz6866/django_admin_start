@@ -20,6 +20,8 @@ class NamuhWindow:
     sz_id = ''  # 사용자 아이디
     sz_pw = ''  # 사용자 비밀번호
     sz_cert_pw = ''  # 공인인증서 비밀번호
+    account_pw = ''  # 계좌 비밀번호
+    trade_pw = ''  # 거래 비밀번호
     is_hts = 'true'  # 모의투자 여부 (True : 모의투자, False : 실투자)
     # callback_class = None
     response = []
@@ -65,11 +67,9 @@ class NamuhWindow:
         # Show Window
         # win32gui.ShowWindow(self.hwnd, SW_SHOWNORMAL)
         win32gui.UpdateWindow(self.hwnd)
-
         self.create_tray_icons()  # 트레이 아이콘 생성
 
         self.wmca = WinDllWmca()  # 모바일증권 나무 DLL 로드
-        self.wmca.set_order_pwd('', '')
         print("NamuhWindow START!")
 
     def create_tray_icons(self):  # 트레이 아이콘 생성
@@ -109,7 +109,8 @@ class NamuhWindow:
             self.sz_id = connect["sz_id"].encode()
             self.sz_pw = connect["sz_pw"].encode()
             self.sz_cert_pw = connect["sz_cert_pw"].encode()
-
+            self.account_pw = connect["account_pw"].encode()
+            self.trade_pw = connect["trade_pw"].encode()
             self.set_is_hts(connect["is_hts"])  # 모의투자 or 실투자 변경
 
             return self.wmca.connect(self.hwnd, self.sz_id, self.sz_pw, self.sz_cert_pw)
@@ -292,7 +293,7 @@ class NamuhWindow:
 
 class WinDllWmca:
     def __init__(self):
-        self.wmca_dll = windll.LoadLibrary('wmca.dll')
+        self.wmca_dll = WinDLL('wmca.dll', use_last_error=True)
 
     def connect(self, hwnd, sz_id, sz_pw, sz_cert_pw):  # 접속 후 로그인(인증)
         func = self.wmca_dll.wmcaConnect
@@ -377,11 +378,21 @@ class WinDllWmca:
         # print("free =", bool(result))
         return bool(result)
 
-    def set_order_pwd(self, szHashOut44, szPwd):  # dll 거래 비밀번호 셋팅
+    def set_order_pwd(self, pass_out, pass_in):  # dll 거래 비밀번호 셋팅
         func = self.wmca_dll.wmcaSetOrderPwd
         func.argtypes = [LPSTR, LPSTR]
         func.restype = BOOL
-        result = func(szHashOut44, szPwd)
+        result = func(pass_out, pass_in)
+        self.response.append(result)
+
+        return bool(result)
+
+    def set_account_index_pwd(self, pass_out, account_index, pass_in):  # dll 계좌 비밀번호 셋팅
+        func = self.wmca_dll.wmcaSetAccountIndexPwd
+        func.argtypes = [c_char_p, INT, c_char_p]
+        func.restype = BOOL
+        result = func(pass_out, account_index, pass_in)
+
         return bool(result)
 
 
