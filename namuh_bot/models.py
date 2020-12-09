@@ -79,6 +79,7 @@ class ProcOrder(models.Model):
     buy_price = models.IntegerField(default=0, verbose_name='구매 단가', validators=[RegexValidator(r'^[0-9]+$')])  # 구매 단가
     buy_qty = models.IntegerField(default=0, verbose_name='구매 수량', validators=[RegexValidator(r'^[0-9]+$')])  # 구매 수량
     is_buy = models.BooleanField(default=False, verbose_name='체결 유무')  # 체결 유무(재구매 방지)
+    order_no = models.CharField(max_length=10, verbose_name='체결 주문 번호', null=True)  # 체결 주문 번호
 
 
 class ProcValid(models.Model):

@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 from django.forms import model_to_dict
 
 from namuh_bot.models import Proc, CD
-from namuh_bot.namuh_structure import C8102InBlockStruct
+from namuh_bot.namuh_structure import C8102InBlockStruct, C8101OutBlockStruct, C8101InBlockStruct
 
 logger = get_task_logger(__name__)
 
@@ -57,8 +57,7 @@ def get_today_flip_order():  # 금일 단타 주문
             if order.is_buy:  # 체결 여부 : 구매 후 단가 체크
                 param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c1101', 'szInput': 'K\x00' + order.buy_cd_id + '\x00', 'nInputLen': 8, 'nAccountIndex': 0}})  # 구매 및 시세 조회 쿼리
             else:  # 구매 처리 (미구매 상태)
-                order.account_pw = proc_login['account_pw']
-                struct = C8102InBlockStruct(order)
+                struct = C8102InBlockStruct(order.account_pw.encode('utf-8'), order.buy_cd_id.encode('utf-8'), str("%012d" % order.buy_qty).encode('utf-8'), str("%010d" % order.buy_price).encode('utf-8'), b'00', proc_login['account_pw'].encode('utf-8'), proc_login['trade_pw'].encode('utf-8'))
                 param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c8102', 'szInput': struct.get_bytes().decode('utf-8'), 'nInputLen': sizeof(struct), 'nAccountIndex': 1}})  # 매수
 
         response = request_bot(param)
@@ -77,7 +76,12 @@ def get_today_flip_order():  # 금일 단타 주문
                             logger.debug(f"{is_noon} : {item.get('time')} => {item.get('price')}")
                             if item.get('price') > valid[0].max_plus_value:
                                 logger.debug('sell')
-                                return  # 매도 처리
+                                struct = C8101InBlockStruct(order.account_pw.encode('utf-8'), order.buy_cd_id.encode('utf-8'), str("%012d" % order.buy_qty).encode('utf-8'), str("%010d" % order.buy_price).encode('utf-8'), b'00', b'', proc_login['account_pw'].encode('utf-8'), proc_login['trade_pw'].encode('utf-8'))
+                                sell_param = [{'req_id': 'connect', 'param': proc_login}, {'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c8102', 'szInput': struct.get_bytes().decode('utf-8'), 'nInputLen': sizeof(struct), 'nAccountIndex': 1}}]
+                                sell_response = request_bot(sell_param)
+                                proc.status = True  # 완료 처리
+                                proc.save()
+                                break  # 매도 처리
                             else:
                                 logger.debug('not sell')
                     else:
@@ -90,6 +94,7 @@ def get_today_flip_order():  # 금일 단타 주문
                     out_block = find_json_elemnt(items=response.json(), name='c8102OutBlock')[0]
                     if out_block['order_noz10'].strip() != '':
                         order.is_buy = True
+                        order.order_no = out_block['order_noz10']
                         order.save()
                     else:
                         result_msg = find_json_elemnt(items=response.json(), name='00000')
