@@ -76,7 +76,7 @@ def get_today_flip_order():  # 금일 단타 주문
                             logger.debug(f"{is_noon} : {item.get('time')} => {item.get('price')}")
                             if item.get('price') > valid[0].max_plus_value:
                                 logger.debug('sell')
-                                struct = C8101InBlockStruct(order.account_pw.encode('utf-8'), order.buy_cd_id.encode('utf-8'), str("%012d" % order.buy_qty).encode('utf-8'), str("%010d" % order.buy_price).encode('utf-8'), b'00', b'', proc_login['account_pw'].encode('utf-8'), proc_login['trade_pw'].encode('utf-8'))
+                                struct = C8101InBlockStruct(order.account_pw.encode('utf-8'), order.buy_cd_id.encode('utf-8'), str("%012d" % order.buy_qty).encode('utf-8'), str("%010d" % valid[0].max_plus_value).encode('utf-8'), b'00', b'', proc_login['account_pw'].encode('utf-8'), proc_login['trade_pw'].encode('utf-8'))
                                 sell_param = [{'req_id': 'connect', 'param': proc_login}, {'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c8102', 'szInput': struct.get_bytes().decode('utf-8'), 'nInputLen': sizeof(struct), 'nAccountIndex': 1}}]
                                 sell_response = request_bot(sell_param)
                                 proc.status = True  # 완료 처리
