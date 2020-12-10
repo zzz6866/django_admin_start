@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 from django.forms import model_to_dict
 
 from namuh_bot.models import Proc, CD
-from namuh_bot.namuh_structure import C8102InBlockStruct, create_namuh_bot_connect, create_namuh_bot_query
+from namuh_bot.namuh_structure import C8102InBlockStruct, C8101InBlockStruct
 
 logger = get_task_logger(__name__)
 
