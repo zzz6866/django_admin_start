@@ -75,16 +75,16 @@ class NamuhWindow:
     def create_tray_icons(self):  # 트레이 아이콘 생성
         # Try and find a custom icon
         hinst = win32api.GetModuleHandle(None)
-        iconPathName = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "pyc.ico"))
-        if not os.path.isfile(iconPathName):
+        icon_path_name = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "pyc.ico"))
+        if not os.path.isfile(icon_path_name):
             # Look in DLLs dir, a-la py 2.5
-            iconPathName = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "DLLs", "pyc.ico"))
-        if not os.path.isfile(iconPathName):
+            icon_path_name = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "DLLs", "pyc.ico"))
+        if not os.path.isfile(icon_path_name):
             # Look in the source tree.
-            iconPathName = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "..\\PC\\pyc.ico"))
-        if os.path.isfile(iconPathName):
+            icon_path_name = os.path.abspath(os.path.join(os.path.split(sys.executable)[0], "..\\PC\\pyc.ico"))
+        if os.path.isfile(icon_path_name):
             icon_flags = win32con.LR_LOADFROMFILE | win32con.LR_DEFAULTSIZE
-            hicon = win32gui.LoadImage(hinst, iconPathName, win32con.IMAGE_ICON, 0, 0, icon_flags)
+            hicon = win32gui.LoadImage(hinst, icon_path_name, win32con.IMAGE_ICON, 0, 0, icon_flags)
         else:
             print("Can't find a Python icon file - using default")
             hicon = win32gui.LoadIcon(0, win32con.IDI_APPLICATION)
@@ -168,11 +168,11 @@ class NamuhWindow:
 
         return win32gui.DefWindowProc(hwnd, message, wParam, lParam)
 
-    def on_wm_receivemessage(self, lParam):
+    def on_wm_receivemessage(self, lparam):
         try:
-            p_msg = OutdatablockStruct.from_address(lParam)
-            pData = ReceivedStruct.from_buffer(p_msg.pData.contents)
-            string_buffer = create_string_buffer(pData.szData[:85], 85)
+            p_msg = OutdatablockStruct.from_address(lparam)
+            p_data = ReceivedStruct.from_buffer(p_msg.pData.contents)
+            string_buffer = create_string_buffer(p_data.szData[:85], 85)
             msg_header = MsgHeaderStruct.from_buffer(string_buffer)
             msg_cd = msg_header.msg_cd.decode("cp949")
             user_msg = msg_header.user_msg.decode("cp949").strip()
@@ -234,58 +234,58 @@ class NamuhWindow:
         print("success")
         return json.dumps(self.response)
 
-    def on_wm_receivedata(self, lParam):  # OnWmReceivedata( (OUTDATABLOCK*)lParam );
+    def on_wm_receivedata(self, lparam):  # OnWmReceivedata( (OUTDATABLOCK*)lParam );
         try:
-            p_msg = OutdatablockStruct.from_address(lParam)
-            pData = ReceivedStruct.from_buffer(p_msg.pData.contents)
-            nLen = pData.nLen
-            string_buffer = create_string_buffer(pData.szData[:nLen], nLen)
-            szBlockName = pData.szBlockName.decode("cp949")
+            p_msg = OutdatablockStruct.from_address(lparam)
+            p_data = ReceivedStruct.from_buffer(p_msg.pData.contents)
+            n_len = p_data.nLen
+            string_buffer = create_string_buffer(p_data.szData[:n_len], n_len)
+            sz_block_name = p_data.szBlockName.decode("cp949")
 
             struct_type = None
-            if szBlockName == 'c1101OutBlock':
+            if sz_block_name == 'c1101OutBlock':
                 struct_type = (C1101OutBlockStruct * 1)
-            elif szBlockName == 'c1101OutBlock2':
-                struct_type = (C1101OutBlock2Struct * (nLen // sizeof(C1101OutBlock2Struct)))
-            elif szBlockName == 'c1101OutBlock3':
+            elif sz_block_name == 'c1101OutBlock2':
+                struct_type = (C1101OutBlock2Struct * (n_len // sizeof(C1101OutBlock2Struct)))
+            elif sz_block_name == 'c1101OutBlock3':
                 struct_type = (C1101OutBlock3Struct * 1)
-            elif szBlockName == 'c4113OutKospi200':
+            elif sz_block_name == 'c4113OutKospi200':
                 struct_type = (C4113OutKospi200Struct * 1)
-            elif szBlockName == 'p1005OutBlock':
-                struct_type = (P1005OutBlockStruct * (nLen // sizeof(P1005OutBlockStruct)))
-            elif szBlockName == 'c8102InBlock':
+            elif sz_block_name == 'p1005OutBlock':
+                struct_type = (P1005OutBlockStruct * (n_len // sizeof(P1005OutBlockStruct)))
+            elif sz_block_name == 'c8102InBlock':
                 struct_type = (C8102InBlockStruct * 1)
-            elif szBlockName == 'c8102OutBlock':
+            elif sz_block_name == 'c8102OutBlock':
                 struct_type = (C8102OutBlockStruct * 1)
 
-            szData = struct_type.from_buffer(string_buffer)
+            sz_data = struct_type.from_buffer(string_buffer)
 
-            # print(f"{p_msg.TrIndex}, {szBlockName}, {nLen}, {repr(szData[:])}")
-            # print(repr(szData))
-            # if szBlockName == "c1101OutBlock":
-            #     print("'" + szData.get_str("code") + "'")
-            #     print("'" + szData.get_str("hname") + "'")
+            # print(f"{p_msg.TrIndex}, {sz_block_name}, {n_len}, {repr(sz_data[:])}")
+            # print(repr(sz_data))
+            # if sz_block_name == "c1101OutBlock":
+            #     print("'" + sz_data.get_str("code") + "'")
+            #     print("'" + sz_data.get_str("hname") + "'")
 
-            json_dump = {szBlockName: [data.get_dict() for data in szData]}
+            json_dump = {sz_block_name: [data.get_dict() for data in sz_data]}
 
             return json_dump
         except Exception as e:
             print("on_wm_receivedata Exception = ", e)
 
-    def on_wm_receivesise(self, lParam):
+    def on_wm_receivesise(self, lparam):
         try:
-            p_msg = OutdatablockStruct.from_address(lParam)
-            pData = ReceivedStruct.from_buffer(p_msg.pData.contents)
+            p_msg = OutdatablockStruct.from_address(lparam)
+            p_data = ReceivedStruct.from_buffer(p_msg.pData.contents)
             p_sise_data = None
-            string_buffer = create_string_buffer(pData.szData, pData.nLen)
-            if pData.szBlockName[:2] == b"j8":  # 코스피 주식 현재가(실시간) 수신
+            string_buffer = create_string_buffer(p_data.szData, p_data.nLen)
+            if p_data.szBlockName[:2] == b"j8":  # 코스피 주식 현재가(실시간) 수신
                 p_sise_data = J8OutBlockStruct.from_buffer(string_buffer, 3)
-            elif pData.szBlockName[:2] == b"d2":  # 실시간 체결통보 => 실시간 체결통보는 별도로 Attach()함수를 호출하지 않아도 자동 수신
+            elif p_data.szBlockName[:2] == b"d2":  # 실시간 체결통보 => 실시간 체결통보는 별도로 Attach()함수를 호출하지 않아도 자동 수신
                 p_sise_data = D2OutBlockStruct.from_buffer(string_buffer, 3)
-            elif pData.szBlockName[:2] == b"d3":  # 실시간 체결통보 => 실시간 체결통보는 별도로 Attach()함수를 호출하지 않아도 자동 수신
+            elif p_data.szBlockName[:2] == b"d3":  # 실시간 체결통보 => 실시간 체결통보는 별도로 Attach()함수를 호출하지 않아도 자동 수신
                 p_sise_data = D3OutBlockStruct.from_buffer(string_buffer, 3)
 
-            print(f"{pData.szBlockName[:2]} : {repr(p_sise_data)}")
+            print(f"{p_data.szBlockName[:2]} : {repr(p_sise_data)}")
             return p_sise_data
         except Exception as e:
             print("on_wm_receivesise Exception = ", e)
@@ -329,30 +329,30 @@ class WinDllWmca:
         # print("is_connected =", bool(result))
         return bool(result)
 
-    def query(self, hwnd, nTRID, szTRCode, szInput, nInputLen, nAccountIndex=0):  # 서비스(TR) 호출
+    def query(self, hwnd, tr_id, sz_tr_code, sz_input, n_input_len, n_account_index=0):  # 서비스(TR) 호출
         func = self.wmca_dll.wmcaQuery
         # HWND hWnd, int nTRID, constchar* szTRCode, const char* szInput, int nInputLen, int nAccountIndex
         func.argtypes = [HWND, INT, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
-        result = func(hwnd, int(nTRID), szTRCode.encode(), szInput.encode(), int(nInputLen), int(nAccountIndex))
+        result = func(hwnd, int(tr_id), sz_tr_code.encode(), sz_input.encode(), int(n_input_len), int(n_account_index))
         # print("query =", bool(result))
         return bool(result)
 
-    def attach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 등록
+    def attach(self, hwnd, sz_bc_type, sz_input, n_code_len, n_input_len):  # 실시간 등록
         func = self.wmca_dll.wmcaAttach
         # HWND hWnd, const char* szBCType, const char* szInput, int nCodeLen, int nInputLen
         func.argtypes = [HWND, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
-        result = func(hwnd, szBCType.encode(), szInput.encode(), nCodeLen, nInputLen)
+        result = func(hwnd, sz_bc_type.encode(), sz_input.encode(), n_code_len, n_input_len)
         # print("attach =", bool(result))
         return bool(result)
 
-    def detach(self, hwnd, szBCType, szInput, nCodeLen, nInputLen):  # 실시간 취소
+    def detach(self, hwnd, sz_bc_type, sz_input, n_code_len, n_input_len):  # 실시간 취소
         func = self.wmca_dll.wmcaDetach
         # HWND hWnd, const char* szBCType, const char* szInput, int nCodeLen, int nInputLen
         func.argtypes = [HWND, LPSTR, LPSTR, INT, INT]
         func.restype = BOOL
-        result = func(hwnd, szBCType.encode(), szInput.encode(), nCodeLen, nInputLen)
+        result = func(hwnd, sz_bc_type.encode(), sz_input.encode(), n_code_len, n_input_len)
         # print("detach =", bool(result))
         return bool(result)
 

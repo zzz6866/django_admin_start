@@ -42,6 +42,10 @@ class ProcLogin(models.Model):
     trade_pw = models.CharField(max_length=44, verbose_name='거래 비밀번호', null=False)  # 거래 비밀번호
     is_hts = models.BooleanField(default=True, verbose_name='모의투자 여부', null=False)  # 완료 유무
 
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        # if self. # TODO 거래비밀번호, 게좌비밀번호 hash 암호화 처리 필요(문의한 내용 답변 받아야 처리 가능)
+        super().save(force_insert, force_update, using, update_fields)
+
 
 PROC_TYPE_KEY = (
     ('', '-------'),

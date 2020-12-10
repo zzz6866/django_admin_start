@@ -512,6 +512,122 @@ class C8102OutBlockStruct(LittleEndianStructure, StructBase):  # 주식매수 �
     ]
 
 
+class C8201InBlockStruct(LittleEndianStructure, StructBase):  # 주식 잔고조회 input
+    _fields_ = [
+        ("pswd_noz8", CHAR * 44),  # 계좌비밀번호
+        ("bnc_bse_cdz1", CHAR * 1),  # 잔고구분 => 1:체결기준(주식관련 총평가 -> 기본 ), 2:결제잔고, 3:시간외종가 체결잔고, 4:시간외종가 결제잔고, 5:주식잔고평가( 주식만 평가 )
+    ]
+
+
+class C8201OutBlockStruct(LittleEndianStructure, StructBase):  # 주식 잔고조회 output
+    _fields_ = [
+        ("dpsit_amtz16", CHAR * 16),  # 예수금
+        ("mrgn_amtz16", CHAR * 16),  # 신용융자금
+        ("mgint_npaid_amtz16", CHAR * 16),  # 이자미납금
+        ("chgm_pos_amtz16", CHAR * 16),  # 출금가능금액
+        ("cash_mrgn_amtz16", CHAR * 16),  # 현금증거금
+        ("subst_mgamt_amtz16", CHAR * 16),  # 대용증거금
+        ("coltr_ratez6", CHAR * 6),  # 담보비율
+        ("rcble_amtz16", CHAR * 16),  # 현금미수금
+        ("order_pos_csamtz16", CHAR * 16),  # 주문가능액
+        ("ecn_pos_csamtz16", CHAR * 16),  # ECN주문가능액
+        ("nordm_loan_amtz16", CHAR * 16),  # 미상환금
+        ("etc_lend_amtz16", CHAR * 16),  # 기타대여금
+        ("subst_amtz16", CHAR * 16),  # 대용금액
+        ("sln_sale_amtz16", CHAR * 16),  # 대주담보금
+        ("bal_buy_ttamtz16", CHAR * 16),  # 매입원가(계좌합산)
+        ("bal_ass_ttamtz16", CHAR * 16),  # 평가금액(계좌합산)
+        ("asset_tot_amtz16", CHAR * 16),  # 순자산액(계좌합산)
+        ("actvt_type10", CHAR * 10),  # 활동유형
+        ("lend_amtz16", CHAR * 16),  # 대출금
+        ("accnt_mgamt_ratez6", CHAR * 6),  # 계좌증거금율
+        ("sl_mrgn_amtz16", CHAR * 16),  # 매도증거금
+        ("pos_csamt1z16", CHAR * 16),  # 20%주문가능금액
+        ("pos_csamt2z16", CHAR * 16),  # 30%주문가능금액
+        ("pos_csamt3z16", CHAR * 16),  # 40%주문가능금액
+        ("pos_csamt4z16", CHAR * 16),  # 100%주문가능금액
+        ("dpsit_amtz_d1_16", CHAR * 16),  # D1예수금
+        ("dpsit_amtz_d2_16", CHAR * 16),  # D2예수금
+        ("noticez30", CHAR * 30),  # 공지사항
+        ("tot_eal_plsz18", CHAR * 18),  # 총평가손익
+        ("pft_rtz15", CHAR * 15),  # 수익율
+    ]
+
+
+class S8120InBlockStruct(LittleEndianStructure, StructBase):  # 주식 잔고조회 input
+    _fields_ = [
+        ("inq_gubunz1", CHAR * 1),  # 조회주체구분
+        ("pswd_noz8", CHAR * 44),  # 비밀번호
+        ("group_noz4", CHAR * 4),  # 그룹번호
+        ("mkt_slctz1", CHAR * 1),  # 시장구분
+        ("order_datez8", CHAR * 8),  # 주문일자
+        ("issue_codez12", CHAR * 12),  # 종목번호
+        ("comm_order_typez2", CHAR * 2),  # 매체구분
+        ("conc_gubunz1", CHAR * 1),  # 체결구분
+        ("inq_seq_gubunz1", CHAR * 1),  # 조회순서
+        ("sort_gubunz1", CHAR * 1),  # 정렬구분
+        ("sell_buy_typez1", CHAR * 1),  # 매수도구분
+        ("mrgn_typez1", CHAR * 1),  # 신용구분
+        ("accnt_admin_typez1", CHAR * 1),  # 계좌구분
+        ("order_noz10", CHAR * 10),  # 주문번호
+        ("ctsz56", CHAR * 56),  # CTS
+        ("trad_pswd1z8", CHAR * 44),  # 거래비밀번호1
+        ("trad_pswd2z8", CHAR * 44),  # 거래비밀번호2
+        ("IsPageUp", CHAR * 1),  # ISPAGEUP
+    ]
+
+
+class S8120OutBlockStruct1(LittleEndianStructure, StructBase):  # 주식 잔고조회 output 1
+    _fields_ = [
+        ("emp_kor_namez20", CHAR * 20),  # 한글사원성명
+        ("brch_namez30", CHAR * 30),  # 한글지점명
+        ("buy_conc_qtyz14", CHAR * 14),  # 매수체결수량
+        ("buy_conc_amtz19", CHAR * 19),  # 매수체결금액
+        ("sell_conc_qtyz14", CHAR * 14),  # 매도체결수량
+        ("sell_conc_amtz19", CHAR * 19),  # 매도체결금액
+    ]
+
+
+class C8201OutBlockStruct2(LittleEndianStructure, StructBase):  # 주식 잔고조회 output 2
+    _fields_ = [
+        ("order_datez8", CHAR * 8),  # 주문일자
+        ("order_noz10", CHAR * 10),  # 주문번호
+        ("orgnl_order_noz10", CHAR * 10),  # 원주문번호
+        ("accnt_noz11", CHAR * 11),  # 계좌번호
+        ("accnt_namez20", CHAR * 20),  # 계좌명
+        ("order_kindz20", CHAR * 20),  # 주문구분
+        ("trd_gubun_noz1", CHAR * 1),  # 매매구분번호
+        ("trd_gubunz20", CHAR * 20),  # 매매구분
+        ("trade_type_noz1", CHAR * 1),  # 거래구분번호
+        ("trade_type1z20", CHAR * 20),  # 거래구분
+        ("issue_codez12", CHAR * 12),  # 종목번호
+        ("issue_namez40", CHAR * 40),  # 종목명
+        ("order_qtyz10", CHAR * 10),  # 주문수량
+        ("conc_qtyz10", CHAR * 10),  # 체결수량
+        ("order_unit_pricez12", CHAR * 12),  # 주문단가
+        ("conc_unit_pricez12", CHAR * 12),  # 체결평균단가
+        ("crctn_canc_qtyz10", CHAR * 10),  # 정정취소수량
+        ("cfirm_qtyz10", CHAR * 10),  # 확인수량
+        ("media_namez12", CHAR * 12),  # 매체구분
+        ("proc_emp_noz5", CHAR * 5),  # 처리사번
+        ("proc_timez8", CHAR * 8),  # 처리시간
+        ("proc_termz8", CHAR * 8),  # 처리단말
+        ("proc_typez12", CHAR * 12),  # 처리구분
+        ("rejec_codez5", CHAR * 5),  # 거부코드
+        ("avail_qtyz10", CHAR * 10),  # 정취가능수량
+        ("mkt_typez1", CHAR * 1),  # 시장구분
+        ("shsll_typez20", CHAR * 20),  # 공매도구분
+        ("passwd_noz8", CHAR * 8),  # 비밀번호
+    ]
+
+
+class C8201OutBlockStruct3(LittleEndianStructure, StructBase):  # 주식 잔고조회 out 3
+    _fields_ = [
+        ("ctsz56", CHAR * 56),  # CTS
+        ("nextbutton", CHAR * 1),  # NEXTBUTTON
+    ]
+
+
 """
 AGENT MODEL END
 """

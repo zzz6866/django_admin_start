@@ -10,7 +10,7 @@ from celery.utils.log import get_task_logger
 from django.forms import model_to_dict
 
 from namuh_bot.models import Proc, CD
-from namuh_bot.namuh_structure import C8102InBlockStruct
+from namuh_bot.namuh_structure import C8102InBlockStruct, create_namuh_bot_connect, create_namuh_bot_query
 
 logger = get_task_logger(__name__)
 
@@ -22,7 +22,10 @@ def get_stock_cd_list():  # 봇에서 상장 종목 가져오기 (dll call)
     proc = Proc.objects.filter(type_code='A').first()
     proc_login = model_to_dict(proc.login_info, exclude=['id', 'name'])
 
-    param = [{'req_id': 'connect', 'param': proc_login}, {'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'p1005', 'szInput': '1', 'nInputLen': 1, 'nAccountIndex': 0}}]
+    param = [
+        create_namuh_bot_connect(login_info=proc_login),
+        create_namuh_bot_query(tr_code='p1005', str_input='1', len_input=1)  # 상장 종목 조회
+    ]
 
     response = request_bot(param)
 
@@ -48,18 +51,18 @@ def get_today_flip_order():  # 금일 단타 주문
 
     for proc in proc_list:
         proc_login = model_to_dict(proc.login_info, exclude=['id', 'name'])
-        param = [{'req_id': 'connect', 'param': proc_login}]
+        param = [create_namuh_bot_connect(login_info=proc_login)]
 
         order = proc.procorder_set.first()
         if not order:
             return None
         else:
             if order.is_buy:  # 체결 여부 : 구매 후 단가 체크
-                param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c1101', 'szInput': 'K\x00' + order.buy_cd_id + '\x00', 'nInputLen': 8, 'nAccountIndex': 0}})  # 구매 및 시세 조회 쿼리
+                param.append(create_namuh_bot_query(tr_code='c1101', str_input='K\x00' + order.buy_cd_id + '\x00', len_input=8))  # 구매 및 시세 조회 쿼리
             else:  # 구매 처리 (미구매 상태)
                 order.account_pw = proc_login['account_pw']
                 struct = C8102InBlockStruct(order)
-                param.append({'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': 'c8102', 'szInput': struct.get_bytes().decode('utf-8'), 'nInputLen': sizeof(struct), 'nAccountIndex': 1}})  # 매수
+                param.append(create_namuh_bot_query(tr_code='c8102', str_input=struct.get_bytes().decode('utf-8'), len_input=sizeof(struct)))  # 매수
 
         response = request_bot(param)
         if response:
@@ -115,8 +118,16 @@ def request_bot(param):  # 봇에 데이터 요청
 # for (k, v) in data.items():
 #    print("Key: " + k)
 #    print("Value: " + str(v))
-def find_json_elemnt(items, name):
+def find_json_elemnt(items, name):  # response 결과에서 해당 데이터 찾기
     for data in items:
         if any(name == d for d in data):
             return data.get(name, None)
     return None
+
+
+def create_namuh_bot_query(tr_code=None, str_input=None, len_input=0, account_index=0):  # query 정보 생성(시세조회, 주문정보 조회 등)
+    return {'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': tr_code, 'szInput': str_input, 'nInputLen': len_input, 'nAccountIndex': account_index}}
+
+
+def create_namuh_bot_connect(login_info=None):  # 로그인 정보 생성
+    return {'req_id': 'connect', 'param': login_info}
