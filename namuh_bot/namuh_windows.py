@@ -219,7 +219,7 @@ class NamuhWindow:
         config.set("", "server", wmca_server)
         config.set("", "port", wmca_port)
         config.set("", "로그사용", "Y")
-        python_exe_path = os.path.dirname(sys.executable)
+        python_exe_path = sys.base_exec_prefix  # os.path.dirname(sys.executable)
         # print("python_exe_path :", python_exe_path)
         with open(python_exe_path + '/wmca.ini', 'w', encoding="utf-8") as configfile:  # python.exe 경로에 wmca.ini 생성(해당 경로에서 생성해야 적용됨)
             config.write(configfile, space_around_delimiters=False)  # space_around_delimiters : 환경변수의 공백여부 (공백이 있을 경우 읽지 못함)
