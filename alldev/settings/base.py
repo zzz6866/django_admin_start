@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.forms',  # custom template name 설정시 필요(django 기본 템플릿 사용 + FORM_RENDERER 변수 선언으로 custom template 같이 사용)
     'torrent_bot.apps.TorrentBotConfig',
     'front.apps.FrontConfig',
     'namuh_bot.apps.NamuhBotConfig',
@@ -71,6 +72,8 @@ TEMPLATES = [
         },
     },
 ]
+
+FORM_RENDERER = 'django.forms.renderers.TemplatesSetting'
 
 WSGI_APPLICATION = 'alldev.wsgi.application'
 

@@ -1,0 +1,9 @@
+{% include "django/forms/widgets/select.html" %}
+<a href="javascript:;" onclick="getStockInfo()" data-test="{{ widget.attrs.id }}">종목 정보 조회</a>
+
+
+<script>
+    var getStockInfo = function (e) {
+        alert("aaaaa");
+    }
+</script>
