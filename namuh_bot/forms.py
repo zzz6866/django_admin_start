@@ -57,7 +57,7 @@ class ProcValidFormInline(NestedTabularInline):
 
 class ProcOrderForm(forms.ModelForm):
     class Media:
-        js = ['namuh_bot/js/namuh_bot.js']
+        js = ['namuh_bot/js/get_stock_info.js']
 
     buy_cd = forms.ModelChoiceField(queryset=CD.objects.all(), widget=autocomplete.ModelSelect2(url='/namuh_bot/cd-autocompleteView/'))
 
