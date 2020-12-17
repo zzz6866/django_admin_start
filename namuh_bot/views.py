@@ -39,14 +39,11 @@ class StockInfoView(View):
             create_namuh_bot_query(tr_code='c1101', str_input='K\x00' + str(json_body['buy_cd']) + '\x00', len_input=8)  # 종목 정보 req
         ]
         response = request_bot(param)
-        logger.debug(response)
-        if any('c1101OutBlock2' in d for d in response.json()):
-            json_out_block = find_json_elemnt(items=response.json(), name='c1101OutBlock2')
-            logger.debug(json_out_block)
-        return JsonResponse(self.get_data(), json_dumps_params={'ensure_ascii': True})
+        # logger.debug(response)
+        if any('c1101OutBlock' in d for d in response.json()):
+            json_out_block = find_json_elemnt(items=response.json(), name='c1101OutBlock')[0]
+            # logger.debug(json_out_block)
+        else:
+            json_out_block = find_json_elemnt(items=response.json(), name='00000')
 
-    def get_data(self):
-        return {
-            'message': '안녕 파이썬 장고',
-            'items': ['파이썬', '장고', 'AWS', 'Azure'],
-        }
+        return JsonResponse(json_out_block, json_dumps_params={'ensure_ascii': True})
