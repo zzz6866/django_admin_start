@@ -398,8 +398,7 @@ class WinDllWmca:
         func.argtypes = [LPSTR, LPSTR]
         func.restype = BOOL
         # result = func(pass_out, pass_in)
-        pass_in_buff = create_string_buffer(pass_in.encode(), 8)
-        result = func(pass_out, pass_in_buff)
+        result = func(pass_out, pass_in.encode())
 
         return bool(result)
 
@@ -410,8 +409,7 @@ class WinDllWmca:
         func.argtypes = [LPSTR, INT, LPSTR]
         func.restype = BOOL
         # result = func(pass_out, account_index, pass_in)
-        pass_in_buff = create_string_buffer(pass_in.encode(), 8)
-        result = func(pass_out, account_index, pass_in_buff)
+        result = func(pass_out, account_index, pass_in.encode())
 
         return bool(result)
 
