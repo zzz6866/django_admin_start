@@ -292,13 +292,17 @@ class NamuhWindow:
 
     def encode_hash(self, param):
         json_data = json.loads(param)
-        hash_type = json_data['encode_type']
+        if self.on_command(json_data):
+            self.response = []
+            win32gui.PumpMessages()  # MFC 메시지 수집
+
         hash_res = create_string_buffer(44)
-        if hash_type == 'account':  # 계좌비밀번호 암호화
-            self.wmca.set_order_pwd(hash_res, json_data['encode_value'])
-        elif hash_type == 'order':  # 거래비밀번호 암호화
-            self.wmca.set_account_index_pwd(hash_res, "1", json_data['encode_value'])
-        return {"encode_value": hash_res.value.decode()}
+        hash_res2 = create_string_buffer(44)
+        self.wmca.set_order_pwd(hash_res, json_data['param']['trade_pw'])
+        self.response.append({'trade_pw': hash_res.value.decode()})
+        self.wmca.set_account_index_pwd(hash_res2, 1, json_data['param']['account_pw'])
+        self.response.append({'account_pw': hash_res2.value.decode()})
+        return self.response
 
 
 class WinDllWmca:
@@ -390,22 +394,24 @@ class WinDllWmca:
 
     def set_order_pwd(self, pass_out, pass_in):  # dll 거래 비밀번호 셋팅
         # func = self.wmca_dll.wmcaSetOrderPwd
-        func = self.wmca_dll.wmcaSetHashPwd
-        func.argtypes = [LPSTR, LPSTR, LPSTR]
+        func = self.wmca_dll.wmcaSetOrderPwd
+        func.argtypes = [LPSTR, LPSTR]
         func.restype = BOOL
         # result = func(pass_out, pass_in)
-        result = func(pass_out, b'', pass_in.encode())
+        pass_in_buff = create_string_buffer(pass_in.encode(), 8)
+        result = func(pass_out, pass_in_buff)
 
         return bool(result)
 
     def set_account_index_pwd(self, pass_out, account_index, pass_in):  # dll 계좌 비밀번호 셋팅
         # func = self.wmca_dll.wmcaSetAccountIndexPwd
         # func.argtypes = [c_char_p, INT, c_char_p]
-        func = self.wmca_dll.wmcaSetAccountNoPwd
-        func.argtypes = [LPSTR, LPSTR, LPSTR]
+        func = self.wmca_dll.wmcaSetAccountIndexPwd
+        func.argtypes = [LPSTR, INT, LPSTR]
         func.restype = BOOL
         # result = func(pass_out, account_index, pass_in)
-        result = func(pass_out, account_index.encode(), pass_in.encode())
+        pass_in_buff = create_string_buffer(pass_in.encode(), 8)
+        result = func(pass_out, account_index, pass_in_buff)
 
         return bool(result)
 
