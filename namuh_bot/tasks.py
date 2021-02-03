@@ -23,7 +23,7 @@ def get_stock_cd_list():  # 봇에서 상장 종목 가져오기 (dll call)
     proc_login = model_to_dict(proc.login_info, exclude=['id', 'name'])
 
     param = [
-        create_namuh_bot_connect(login_info=proc_login),
+        create_namuh_bot_connect(param=proc_login),
         create_namuh_bot_query(tr_code='p1005', str_input='1', len_input=1)  # 상장 종목 조회
     ]
 
@@ -31,7 +31,7 @@ def get_stock_cd_list():  # 봇에서 상장 종목 가져오기 (dll call)
 
     if response:
         if any('p1005OutBlock' in d for d in response.json()):
-            cd_list = response.json()[0]['p1005OutBlock']
+            cd_list = response.json().get('p1005OutBlock')
             for node in cd_list:  # 종목 코드 저장
                 logger.debug(f"code : {node.get('code')} => hnamez40 : {node.get('hnamez40')}")
                 stock_cd = CD(cd=node.get('code'), nm=node.get('hnamez40'))
@@ -51,7 +51,7 @@ def get_today_flip_order():  # 금일 단타 주문
 
     for proc in proc_list:
         proc_login = model_to_dict(proc.login_info, exclude=['id', 'name'])
-        param = [create_namuh_bot_connect(login_info=proc_login)]
+        param = [create_namuh_bot_connect(param=proc_login)]
 
         order = proc.procorder_set.first()
         if not order:
@@ -60,7 +60,8 @@ def get_today_flip_order():  # 금일 단타 주문
             if order.is_buy:  # 체결 여부 : 구매 후 단가 체크
                 param.append(create_namuh_bot_query(tr_code='c1101', str_input='K\x00' + order.buy_cd_id + '\x00', len_input=8))  # 구매 및 시세 조회 쿼리
             else:  # 구매 처리 (미구매 상태)
-                struct = C8102InBlockStruct(order.account_pw.encode('utf-8'), order.buy_cd_id.encode('utf-8'), str("%012d" % order.buy_qty).encode('utf-8'), str("%010d" % order.buy_price).encode('utf-8'), b'00', proc_login['account_pw'].encode('utf-8'), proc_login['trade_pw'].encode('utf-8'))
+                order.account_pw = proc_login['account_pw']
+                struct = C8102InBlockStruct(order)
                 param.append(create_namuh_bot_query(tr_code='c8102', str_input=struct.get_bytes().decode('utf-8'), len_input=sizeof(struct)))  # 매수
 
         response = request_bot(param)
@@ -70,7 +71,7 @@ def get_today_flip_order():  # 금일 단타 주문
             #     cd_list = response.json()[0]['p1005OutBlock']
             if order.is_buy:  # 종가 단가 체크 후 조건 충족시 매도 처리
                 if any('c1101OutBlock2' in d for d in response.json()):
-                    out_block = find_json_elemnt(items=response.json(), name='c1101OutBlock2')
+                    out_block = response.json().get('c1101OutBlock2')
                     is_noon = time.strftime("%p")
                     valid = order.procvalid_set.filter(is_noon=is_noon)
                     if valid:
@@ -90,20 +91,20 @@ def get_today_flip_order():  # 금일 단타 주문
                     else:
                         logger.debug(f'no vaild : {is_noon}')
                 else:  # 결과 메시지 처리
-                    result_msg = find_json_elemnt(items=response.json(), name='00000')
+                    result_msg = response.json().get('00000')
                     logger.debug('not buy!!! %s' % result_msg)
             else:  # 매수 요청 후 결과 처리
                 if any('c8102OutBlock' in d for d in response.json()):  # 체결 완료 처리(이후 가격 체크)
-                    out_block = find_json_elemnt(items=response.json(), name='c8102OutBlock')[0]
+                    out_block = response.json().get('c8102OutBlock')[0]
                     if out_block['order_noz10'].strip() != '':
                         order.is_buy = True
                         order.order_no = out_block['order_noz10']
                         order.save()
                     else:
-                        result_msg = find_json_elemnt(items=response.json(), name='00000')
+                        result_msg = response.json().get('00000')
                         logger.debug('not buy!!! %s' % result_msg)
                 else:
-                    result_msg = find_json_elemnt(items=response.json(), name='00001')
+                    result_msg = response.json().get('00001')
                     logger.debug('result !!! %s' % result_msg)
 
     logger.info("get_today_flip_order END !!!!")
@@ -123,16 +124,16 @@ def request_bot(param):  # 봇에 데이터 요청
 # for (k, v) in data.items():
 #    print("Key: " + k)
 #    print("Value: " + str(v))
-def find_json_elemnt(items, name):  # response 결과에서 해당 데이터 찾기
-    for data in items:
-        if any(name == d for d in data):
-            return data.get(name, None)
-    return None
+# def find_json_elemnt(items, name):  # response 결과에서 해당 데이터 찾기
+#     for data in items:
+#         if any(name == d for d in data):
+#             return data.get(name, None)
+#     return None
 
 
 def create_namuh_bot_query(tr_code=None, str_input=None, len_input=0, account_index=0):  # query 정보 생성(시세조회, 주문정보 조회 등)
     return {'req_id': 'query', 'param': {'nTRID': 1, 'szTRCode': tr_code, 'szInput': str_input, 'nInputLen': len_input, 'nAccountIndex': account_index}}
 
 
-def create_namuh_bot_connect(login_info=None):  # 로그인 정보 생성
-    return {'req_id': 'connect', 'param': login_info}
+def create_namuh_bot_connect(param=None):  # 로그인 정보 생성
+    return {'req_id': 'connect', 'param': param}

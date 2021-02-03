@@ -497,6 +497,14 @@ class C8102InBlockStruct(LittleEndianStructure, StructBase):  # 주식매수 주
         ("trad_pswd_no_2z8", CHAR * 44),  # 거래비밀번호2
     ]
 
+    def __init__(self, dict_data=None):
+        # print(dict_data)
+        if dict_data:
+            print(dict_data.account_pw)
+            super().__init__(dict_data.account_pw.encode('utf-8'), dict_data.buy_cd_id.encode('utf-8'), str("%012d" % dict_data.buy_qty).encode('utf-8'), str("%010d" % dict_data.buy_price).encode('utf-8'), b'00', b'', b'')
+        else:
+            super().__init__()
+
 
 class C8102OutBlockStruct(LittleEndianStructure, StructBase):  # 주식매수 주문 output
     _fields_ = [

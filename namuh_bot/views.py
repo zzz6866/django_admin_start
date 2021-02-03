@@ -35,7 +35,7 @@ class StockInfoView(View):
         json_body = json.loads(request.body.decode("utf-8"))
         login_info = ProcLogin.objects.get(id=json_body['login_id'])
         param = [
-            create_namuh_bot_connect(login_info=model_to_dict(login_info, exclude=['id', 'name'])),  # 로그인 정보 req
+            create_namuh_bot_connect(param=model_to_dict(login_info, exclude=['id', 'name'])),  # 로그인 정보 req
             create_namuh_bot_query(tr_code='c1101', str_input='K\x00' + str(json_body['buy_cd']) + '\x00', len_input=8)  # 종목 정보 req
         ]
         response = request_bot(param)

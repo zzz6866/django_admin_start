@@ -7,7 +7,7 @@ from namuh_bot.namuh_windows import NamuhWindow
 # HTTP Request class
 class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple http web server
     namuh = NamuhWindow()
-    timeout = 6  # 타임아웃 5초
+    timeout = 5  # 타임아웃 5초
 
     def do_GET(self):  # HTTP request GET
         self.request_get_mapping()

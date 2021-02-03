@@ -24,7 +24,7 @@ class NamuhWindow:
     trade_pw = ''  # 거래 비밀번호
     is_hts = 'true'  # 모의투자 여부 (True : 모의투자, False : 실투자)
     # callback_class = None
-    response = []
+    response = {}
 
     def __init__(self):
         # message map
@@ -153,12 +153,14 @@ class NamuhWindow:
             print("통신 오류 발생")
         elif wParam == CA_RECEIVEDATA:  # 서비스 응답 수신(TR)
             print("서비스 응답 수신(TR)")
-            self.response.append(self.on_wm_receivedata(lParam))
+            sz_block_name, sz_block_data = self.on_wm_receivedata(lParam)
+            self.response[sz_block_name] = sz_block_data
         elif wParam == CA_RECEIVESISE:  # 실시간 데이터 수신(BC)
             print("실시간 데이터 수신(BC)")
-            self.response.append(self.on_wm_receivesise(lParam))
+            self.response['realtime'] = self.on_wm_receivesise(lParam)
         elif wParam == CA_RECEIVEMESSAGE:  # 상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨)
-            self.response.append(self.on_wm_receivemessage(lParam))
+            msg_cd, user_msg = self.on_wm_receivemessage(lParam)
+            self.response[msg_cd] = user_msg
             win32gui.PostQuitMessage(0)
         elif wParam == CA_RECEIVECOMPLETE:  # 서비스 처리 완료
             print("서비스 처리 완료")
@@ -177,7 +179,7 @@ class NamuhWindow:
             msg_cd = msg_header.msg_cd.decode("cp949")
             user_msg = msg_header.user_msg.decode("cp949").strip()
             print("상태 메시지 수신 (입력값이 잘못되었을 경우 문자열형태로 설명이 수신됨) = {1} : {2}".format(p_msg.TrIndex, msg_cd, user_msg))
-            return {msg_cd: user_msg}
+            return msg_cd, user_msg
         except Exception as e:
             print("on_wm_receivemessage Exception = ", e)
 
@@ -229,7 +231,7 @@ class NamuhWindow:
     def request_query(self, param):  # 증권사에 정보 조회
         for node in json.loads(param):
             if self.on_command(node):
-                self.response = []
+                self.response = {}
                 win32gui.PumpMessages()  # MFC 메시지 수집
         print("success")
         return json.dumps(self.response)
@@ -266,9 +268,7 @@ class NamuhWindow:
             #     print("'" + sz_data.get_str("code") + "'")
             #     print("'" + sz_data.get_str("hname") + "'")
 
-            json_dump = {sz_block_name: [data.get_dict() for data in sz_data]}
-
-            return json_dump
+            return sz_block_name, [data.get_dict() for data in sz_data]
         except Exception as e:
             print("on_wm_receivedata Exception = ", e)
 
@@ -293,16 +293,16 @@ class NamuhWindow:
     def encode_hash(self, param):
         json_data = json.loads(param)
         if self.on_command(json_data):
-            self.response = []
+            self.response = {}
             win32gui.PumpMessages()  # MFC 메시지 수집
 
         hash_res = create_string_buffer(44)
         hash_res2 = create_string_buffer(44)
         self.wmca.set_order_pwd(hash_res, json_data['param']['trade_pw'])
-        self.response.append({'trade_pw': hash_res.value.decode()})
+        self.response['trade_pw'] = hash_res.value.decode()
         self.wmca.set_account_index_pwd(hash_res2, 1, json_data['param']['account_pw'])
-        self.response.append({'account_pw': hash_res2.value.decode()})
-        return self.response
+        self.response['account_pw'] = hash_res2.value.decode()
+        return json.dumps(self.response)
 
 
 class WinDllWmca:
