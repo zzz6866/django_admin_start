@@ -9,7 +9,7 @@ from django.shortcuts import render
 from django.views import View
 
 from namuh_bot.models import CD, ProcLogin
-from namuh_bot.tasks import request_bot, create_namuh_bot_connect, create_namuh_bot_query, find_json_elemnt
+from namuh_bot.tasks import request_bot, create_namuh_bot_connect, create_namuh_bot_query
 
 logger = get_task_logger(__name__)
 
@@ -41,9 +41,9 @@ class StockInfoView(View):
         response = request_bot(param)
         # logger.debug(response)
         if any('c1101OutBlock' in d for d in response.json()):
-            json_out_block = find_json_elemnt(items=response.json(), name='c1101OutBlock')[0]
+            json_out_block = response.json().get('c1101OutBlock')[0]
             # logger.debug(json_out_block)
         else:
-            json_out_block = find_json_elemnt(items=response.json(), name='00000')
+            json_out_block = response.json().get('00000')
 
         return JsonResponse(json_out_block, json_dumps_params={'ensure_ascii': True})
