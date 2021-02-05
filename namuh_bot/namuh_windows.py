@@ -104,16 +104,20 @@ class NamuhWindow:
         req_id = json_data["req_id"]
 
         if req_id == "connect":
-            print("로그인 시도")
-            connect = json_data["param"]
-            self.sz_id = connect["sz_id"].encode()
-            self.sz_pw = connect["sz_pw"].encode()
-            self.sz_cert_pw = connect["sz_cert_pw"].encode()
-            self.account_pw = connect["account_pw"].encode()
-            self.trade_pw = connect["trade_pw"].encode()
-            self.set_is_hts(connect["is_hts"])  # 모의투자 or 실투자 변경
+            if self.wmca.is_connected():
+                print("로그인 정보 존재")
+                return False
+            else:
+                print("로그인 시도")
+                connect = json_data["param"]
+                self.sz_id = connect["sz_id"].encode()
+                self.sz_pw = connect["sz_pw"].encode()
+                self.sz_cert_pw = connect["sz_cert_pw"].encode()
+                self.account_pw = connect["account_pw"].encode()
+                self.trade_pw = connect["trade_pw"].encode()
+                self.set_is_hts(connect["is_hts"])  # 모의투자 or 실투자 변경
 
-            return self.wmca.connect(self.hwnd, self.sz_id, self.sz_pw, self.sz_cert_pw)
+                return self.wmca.connect(self.hwnd, self.sz_id, self.sz_pw, self.sz_cert_pw)
 
         elif req_id == "query":
             print("일회성 조회")

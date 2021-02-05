@@ -67,7 +67,8 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
 
 def http_server_start():
     # request address, port
-    ADDRESS = ('localhost', 10003)
+    import socket
+    ADDRESS = (socket.gethostbyname(socket.gethostname()), 10003)
     # wait request
     listener = http.server.HTTPServer(ADDRESS, SimpleHTTPRequestHandler)  #
     print(f'http://{ADDRESS[0]}:{ADDRESS[1]} wait request connect...')
