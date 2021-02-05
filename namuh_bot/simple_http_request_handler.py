@@ -65,7 +65,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
         self.response(200, res)
 
 
-if __name__ == '__main__':
+def http_server_start():
     # request address, port
     ADDRESS = ('localhost', 10003)
     # wait request
@@ -77,3 +77,7 @@ if __name__ == '__main__':
     # t.daemon = True
     # t.start()
     # win32gui.PumpMessages()  # MFC 메시지 수집
+
+
+if __name__ == '__main__':
+    http_server_start()
