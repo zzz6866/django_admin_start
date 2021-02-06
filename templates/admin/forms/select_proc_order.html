@@ -1,9 +1,10 @@
-{% include "django/forms/widgets/select.html" %}
-<a href="javascript:;" onclick="getStockInfo()" data-test="{{ widget.attrs.id }}">종목 정보 조회</a>
-
-
-<script>
-    var getStockInfo = function (e) {
-        alert("aaaaa");
-    }
-</script>
+<div class="related-widget-wrapper">
+    {% include "django/forms/widgets/select.html" %}
+    <a class="related-widget-wrapper-link change-related"
+       data-href-template="/namuh_bot/getStockinfoView/?_to_field=id&_popup=1&buy_cd=__buy_cd__&login_id=__login_id__"
+       title="종목 정보 조회"
+       id="getStockInfo"
+       href="">
+        종목 정보 조회
+    </a>
+</div>

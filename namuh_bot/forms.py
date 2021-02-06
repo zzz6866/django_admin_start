@@ -51,15 +51,15 @@ class ProcValidFormInline(NestedTabularInline):
     fk_name = 'parent'
 
 
-# class SelectProcOrder(autocomplete.ModelSelect2):
-#     template_name = 'admin/forms/select_proc_order.html'
+class SelectProcOrder(autocomplete.ModelSelect2):
+    template_name = 'admin/forms/select_proc_order.html'
 
 
 class ProcOrderForm(forms.ModelForm):
     class Media:
         js = ['namuh_bot/js/get_stock_info.js']
 
-    buy_cd = forms.ModelChoiceField(queryset=CD.objects.all(), widget=autocomplete.ModelSelect2(url='/namuh_bot/cd-autocompleteView/'))
+    buy_cd = forms.ModelChoiceField(queryset=CD.objects.all(), widget=SelectProcOrder(url='/namuh_bot/cd-autocompleteView/'))
 
 
 class ProcOrderFormInline(NestedTabularInline):

@@ -31,8 +31,8 @@ class ProcLogin(models.Model):
 
     class Meta:
         # Add verbose name
-        verbose_name_plural = '로그인 정보'
-        verbose_name = '로그인 정보'
+        verbose_name_plural = '나무 로그인 정보'
+        verbose_name = '나무 로그인 정보'
 
     name = models.CharField(max_length=15, verbose_name='별칭')  # 명칭
     sz_id = models.CharField(max_length=15, verbose_name='로그인 아이디')  # 로그인 ID
@@ -66,7 +66,7 @@ class Proc(models.Model):
     name = models.CharField(max_length=15, verbose_name='이름')  # 명칭
     type_code = models.CharField(max_length=1, verbose_name='요청 구분', blank=True, choices=PROC_TYPE_KEY, default='B')  #
     status = models.BooleanField(default=False, verbose_name='완료 유무')  # 완료 유무
-    login_info = models.ForeignKey(ProcLogin, blank=False, default=None, verbose_name='로그인 정보', on_delete=models.CASCADE)
+    login_info = models.ForeignKey(ProcLogin, blank=False, default=None, verbose_name='나무 로그인 정보', on_delete=models.CASCADE)
 
 
 class ProcOrder(models.Model):

@@ -68,7 +68,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
 def http_server_start():
     # request address, port
     import socket
-    f = open('namuh_bot_ip', 'w')
+    f = open('../namuh_bot_ip', 'w')
     f.write(socket.gethostbyname(socket.gethostname()))
     f.close()
 

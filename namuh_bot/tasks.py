@@ -13,9 +13,6 @@ from namuh_bot.models import Proc, CD
 from namuh_bot.namuh_structure import C8102InBlockStruct, C8101InBlockStruct
 
 logger = get_task_logger(__name__)
-f = open('namuh_bot_ip', 'r')
-hostname = f.read()
-f.close()
 
 
 @shared_task()
@@ -114,6 +111,10 @@ def get_today_flip_order():  # 금일 단타 주문
 
 
 def request_bot(param):  # 봇에 데이터 요청
+    f = open('namuh_bot_ip', 'r')
+    hostname = f.read()
+    f.close()
+
     headers = {'Content-Type': 'application/json; charset=utf-8'}
     url = 'http://' + hostname + ':10003/namuh_windows'
 

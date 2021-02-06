@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-import json
 
 from celery.utils.log import get_task_logger
 from dal import autocomplete
 from django.forms import model_to_dict
-from django.http import JsonResponse, HttpResponseNotFound
+from django.http import JsonResponse
 from django.shortcuts import render
-from django.views import View
+from django.views.generic import TemplateView
 
 from namuh_bot.models import CD, ProcLogin
 from namuh_bot.tasks import request_bot, create_namuh_bot_connect, create_namuh_bot_query
@@ -27,16 +26,18 @@ class CDAutocompleteView(autocomplete.Select2QuerySetView):
         return qs
 
 
-class StockInfoView(View):
-    def get(self, request, *args, **kwargs):
-        return HttpResponseNotFound()
+class StockInfoView(TemplateView):
+    template_name = "admin/change_list.html"
+    title = "메인 페이지"
 
-    def post(self, request, *args, **kwargs):
-        json_body = json.loads(request.body.decode("utf-8"))
-        login_info = ProcLogin.objects.get(id=json_body['login_id'])
+    # def get(self, request, *args, **kwargs):
+    #     return HttpResponseNotFound()
+
+    def get(self, request, *args, **kwargs):
+        login_info = ProcLogin.objects.get(id=request.GET.get('login_id'))
         param = [
             create_namuh_bot_connect(param=model_to_dict(login_info, exclude=['id', 'name'])),  # 로그인 정보 req
-            create_namuh_bot_query(tr_code='c1101', str_input='K\x00' + str(json_body['buy_cd']) + '\x00', len_input=8)  # 종목 정보 req
+            create_namuh_bot_query(tr_code='c1101', str_input='K\x00' + str(request.GET.get('buy_cd')) + '\x00', len_input=8)  # 종목 정보 req
         ]
         response = request_bot(param)
         # logger.debug(response)
@@ -44,6 +45,10 @@ class StockInfoView(View):
             json_out_block = response.json().get('c1101OutBlock')[0]
             # logger.debug(json_out_block)
         else:
-            json_out_block = response.json().get('00000')
+            json_out_block = response.json()
 
-        return JsonResponse(json_out_block, json_dumps_params={'ensure_ascii': True})
+        # ctx = {
+        #     'title': self.title,
+        # }
+        # return self.render_to_response(ctx)
+        return JsonResponse(json_out_block, json_dumps_params={'ensure_ascii': True})  # TODO : 템플릿 적용필요
