@@ -1,16 +1,20 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
+import json
+import re
 import time
 from ctypes import sizeof
 
 import requests
+from bs4 import BeautifulSoup
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.forms import model_to_dict
 
 from namuh_bot.models import Proc, CD
 from namuh_bot.namuh_structure import C8102InBlockStruct, C8101InBlockStruct
+from selenium_browser.selenium_browser import SeleniumBrowser
 
 logger = get_task_logger(__name__)
 
@@ -141,3 +145,34 @@ def create_namuh_bot_query(tr_code=None, str_input=None, len_input=0, account_in
 
 def create_namuh_bot_connect(param=None):  # 로그인 정보 생성
     return {'req_id': 'connect', 'param': param}
+
+
+@shared_task()
+def get_today_trade_high_list():
+    logger.info("get_today_flip_order START !!!!")
+
+    chromedriver = SeleniumBrowser().driver
+    chromedriver.get('https://finance.naver.com/sise/field_submit.nhn?menu=quant_high&returnUrl=http%3A%2F%2Ffinance.naver.com%2Fsise%2Fsise_quant_high.nhn%3Fsosok%3D0&fieldIds=quant&fieldIds=ask_buy&fieldIds=operating_profit&fieldIds=per&fieldIds=ask_sell&fieldIds=prev_quant')
+    # print(chromedriver.current_url)
+    str_html = chromedriver.page_source
+    # logger.debug(str_html)
+    soup = BeautifulSoup(str_html, 'html.parser')
+    result_table = soup.select('table.type_2 > tbody > tr')  #
+    json_table = [['N', '증가율', '종목명', '현재가', '전일비', '등락률', '거래량', '전일거래량', '매수호가', '매도호가', '영업이익', 'PER']]
+    for row in result_table:
+        td_data = []
+        for cell in row('td'):
+            try:
+                sub_value = re.sub(r'[^\d.]', '', cell.text)
+                if '.' in sub_value:
+                    value = float(sub_value)
+                else:
+                    value = int(sub_value)
+            except ValueError as e:
+                value = cell.text.strip()
+            td_data.append(value)
+        json_table.append(td_data)
+    logger.debug(json_table)
+
+    chromedriver.close()
+    logger.info("get_today_flip_order END !!!!")

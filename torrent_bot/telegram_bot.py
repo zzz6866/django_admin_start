@@ -1,14 +1,13 @@
 # -*- coding: utf-8 -*-
-import json
-from datetime import datetime
 
 import telegram
 from bs4 import BeautifulSoup
 from celery.utils.log import get_task_logger
 from telegram import ParseMode, ForceReply, InlineKeyboardMarkup, InlineKeyboardButton
 
-from torrent_bot.models import TorrentMovie, TelegramBotEnableStatus
-from torrent_bot.selenium_chrome import SeleniumChrome
+from selenium_browser.selenium_browser import SeleniumBrowser
+from torrent_bot.models import TelegramBotEnableStatus
+from torrent_bot.tasks import BASE_URL, TR_BOARD_LIST
 
 logger = get_task_logger(__name__)
 
@@ -98,7 +97,7 @@ class TelegramBot:
             return
             # 토렌트 검색시
         elif MSG_FIND_TEXT in str(msg):
-            self.cmd_find_torrent(msg['text'])
+            # self.cmd_find_torrent(msg['text'])
             return
         else:
             self.bot.send_message(chat_id=self.chat_id, text=USAGE_HELP + "\n!!명령어를 확인하세요!!")
@@ -157,22 +156,41 @@ class TelegramBot:
         """
         self.bot.send_message(chat_id=self.chat_id, text=USAGE_HELP)
 
-    def cmd_find_torrent(self, find_text):
-        """
-        토렌트 검색
-        :param find_text: 검색어
-        :return:
-        """
-        self.bot.send_message(chat_id=self.chat_id, text="검색중입니다...")
-        res_list = SeleniumChrome().get_find_torrent(find_text=find_text)
-        # self.bot.send_message(chat_id=self.chat_id, text=msg, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
-        inline_keyboard_list, reply_markup = self.get_inline_keyboard_list(res_list)
-        if len(inline_keyboard_list) > 0:
-            msg = "검색 결과입니다."
-        else:
-            msg = "검색된 결과가 없습니다.\n다시 시도하시려면 " + BUTTON_FIND_TORRNET + " 명령어를 입력하세요."
-
-        self.bot.send_message(chat_id=self.chat_id, text=msg, reply_markup=reply_markup)
+    # def cmd_find_torrent(self, find_text):  # TODO : 사이트 사망으로 주석처리
+    #     """
+    #     토렌트 검색
+    #     :param find_text: 검색어
+    #     :return:
+    #     """
+    #     logger.info('START FIND NEW TORRENT!!!')
+    #
+    #     self.bot.send_message(chat_id=self.chat_id, text="검색중입니다...")
+    #
+    #     chromedriver = SeleniumBrowser().driver
+    #     chromedriver.get(BASE_URL + '/bbs/s-1-' + find_text)
+    #     # print(chromedriver.current_url)
+    #     html_list = chromedriver.page_source
+    #     # print(html)
+    #     soup = BeautifulSoup(html_list, 'html.parser')
+    #     tr_board_list = soup.select(TR_BOARD_LIST)  #
+    #     # print(tr_board_list)
+    #     res_list = []
+    #     for (i, entry) in enumerate(tr_board_list):
+    #         a_href = entry.find('td', attrs={'class': 'subject'}).find_all('a', recursive=False)[1]  # 제목
+    #         detail_url = BASE_URL + a_href['href'].replace('..', '')  # 상세 화면 url
+    #         dic = {"torrent_title": a_href.string, "torrent_detail_url": detail_url}
+    #         res_list.append(dic)
+    #
+    #     chromedriver.close()
+    #
+    #     # self.bot.send_message(chat_id=self.chat_id, text=msg, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+    #     inline_keyboard_list, reply_markup = self.get_inline_keyboard_list(res_list)
+    #     if len(inline_keyboard_list) > 0:
+    #         msg = "검색 결과입니다."
+    #     else:
+    #         msg = "검색된 결과가 없습니다.\n다시 시도하시려면 " + BUTTON_FIND_TORRNET + " 명령어를 입력하세요."
+    #
+    #     self.bot.send_message(chat_id=self.chat_id, text=msg, reply_markup=reply_markup)
 
     def get_inline_keyboard_list(self, res_list):
         inline_keyboard_list = []
