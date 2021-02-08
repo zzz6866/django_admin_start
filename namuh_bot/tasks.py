@@ -170,7 +170,7 @@ def get_today_trade_high_list():  # ## 네이버 거래량 급증 데이터 수�
         buy_cd = row[0].split('-')[2]  # 종목코드
         chk_proc_order = Proc.objects.filter(procorder__buy_cd=buy_cd, status=False)
         if chk_proc_order.count() == 0:  # 거래 목록에 이미 있을 경우 저장하지 않음
-            new_proc = Proc.objects.create(name='N 거래량 급증 - ' + row[2], login_info_id=1)
+            new_proc = Proc.objects.create(name='네이버 거래량 급증 - ' + row[2], login_info_id=1)
             new_proc.save()
             new_proc_order = ProcOrder.objects.create(parent_id=new_proc.id, buy_cd_id=buy_cd, buy_price=row[3], buy_qty=1)
             new_proc_order.save()
