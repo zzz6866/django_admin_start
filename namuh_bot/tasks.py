@@ -23,7 +23,7 @@ logger = get_task_logger(__name__)
 def get_stock_cd_list():  # 봇에서 상장 종목 가져오기 (dll call)
     logger.info("get_stock_cd_list START !!!!")
 
-    proc_login = model_to_dict(ProcLogin.objects.get(id=1), exclude=['id', 'name'])  # 종목 수집용 계정 설정 
+    proc_login = model_to_dict(ProcLogin.objects.get(id=1), exclude=['id', 'name'])  # 종목 수집용 계정 설정
 
     param = [
         create_namuh_bot_connect(param=proc_login),
@@ -50,7 +50,7 @@ def get_stock_cd_list():  # 봇에서 상장 종목 가져오기 (dll call)
 def get_today_flip_order():  # 금일 단타 주문
     logger.info("get_today_flip_order START !!!!")
 
-    proc_list = Proc.objects.filter(type_code='B', status=False)  # 금일 단타 내역 조회
+    proc_list = Proc.objects.filter(status=False)  # 금일 단타 내역 조회
 
     for proc in proc_list:
         proc_login = model_to_dict(proc.login_info, exclude=['id', 'name'])
@@ -170,7 +170,7 @@ def get_today_trade_high_list():  # ## 네이버 거래량 급증 데이터 수�
         buy_cd = row[0].split('-')[2]  # 종목코드
         chk_proc_order = Proc.objects.filter(procorder__buy_cd=buy_cd, status=False)
         if chk_proc_order.count() == 0:  # 거래 목록에 이미 있을 경우 저장하지 않음
-            new_proc = Proc.objects.create(name='N 거래량 급증 - ' + row[2], type_code='B', login_info_id=1)
+            new_proc = Proc.objects.create(name='N 거래량 급증 - ' + row[2], login_info_id=1)
             new_proc.save()
             new_proc_order = ProcOrder.objects.create(parent_id=new_proc.id, buy_cd_id=buy_cd, buy_price=row[3], buy_qty=1)
             new_proc_order.save()
