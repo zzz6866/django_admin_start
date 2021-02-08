@@ -34,7 +34,7 @@ class ProcLogin(models.Model):
         verbose_name_plural = '나무 로그인 정보'
         verbose_name = '나무 로그인 정보'
 
-    name = models.CharField(max_length=15, verbose_name='별칭')  # 명칭
+    name = models.CharField(max_length=15, verbose_name='별칭')  # 별칭
     sz_id = models.CharField(max_length=15, verbose_name='로그인 아이디')  # 로그인 ID
     sz_pw = fields.EncryptedCharField(verbose_name='로그인 비밀번호', null=False)  # models.CharField(max_length=15, verbose_name='로그인 PW')  # 로그인 PW
     sz_cert_pw = fields.EncryptedCharField(verbose_name='인증서 비밀번호', null=False)  # models.CharField(max_length=15, verbose_name='인증서 비밀번호')  # 인증서 비밀번호
@@ -47,13 +47,6 @@ class ProcLogin(models.Model):
         super().save(force_insert, force_update, using, update_fields)
 
 
-PROC_TYPE_KEY = (
-    ('', '-------'),
-    ('A', '종목 조회'),
-    ('B', '체결 및 모니터링'),
-)
-
-
 class Proc(models.Model):
     def __str__(self):
         return self.name
@@ -63,8 +56,7 @@ class Proc(models.Model):
         verbose_name_plural = '종목 체결 정보'
         verbose_name = '종목 체결 정보'
 
-    name = models.CharField(max_length=15, verbose_name='이름')  # 명칭
-    type_code = models.CharField(max_length=1, verbose_name='요청 구분', blank=True, choices=PROC_TYPE_KEY, default='B')  #
+    name = models.CharField(max_length=50, verbose_name='이름')  # 명칭
     status = models.BooleanField(default=False, verbose_name='완료 유무')  # 완료 유무
     login_info = models.ForeignKey(ProcLogin, blank=False, default=None, verbose_name='나무 로그인 정보', on_delete=models.CASCADE)
 

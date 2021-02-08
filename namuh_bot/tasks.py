@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, unicode_literals
 
-import json
 import re
 import time
+import urllib.parse
 from ctypes import sizeof
 
 import requests
@@ -12,7 +12,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.forms import model_to_dict
 
-from namuh_bot.models import Proc, CD
+from namuh_bot.models import Proc, CD, ProcOrder, ProcLogin
 from namuh_bot.namuh_structure import C8102InBlockStruct, C8101InBlockStruct
 from selenium_browser.selenium_browser import SeleniumBrowser
 
@@ -23,8 +23,7 @@ logger = get_task_logger(__name__)
 def get_stock_cd_list():  # 봇에서 상장 종목 가져오기 (dll call)
     logger.info("get_stock_cd_list START !!!!")
 
-    proc = Proc.objects.filter(type_code='A').first()
-    proc_login = model_to_dict(proc.login_info, exclude=['id', 'name'])
+    proc_login = model_to_dict(ProcLogin.objects.get(id=1), exclude=['id', 'name'])  # 종목 수집용 계정 설정 
 
     param = [
         create_namuh_bot_connect(param=proc_login),
@@ -148,31 +147,63 @@ def create_namuh_bot_connect(param=None):  # 로그인 정보 생성
 
 
 @shared_task()
-def get_today_trade_high_list():
+def get_today_trade_high_list():  # ## 네이버 거래량 급증 데이터 수집 처리
     logger.info("get_today_flip_order START !!!!")
 
     chromedriver = SeleniumBrowser().driver
+
+    # 코스피
     chromedriver.get('https://finance.naver.com/sise/field_submit.nhn?menu=quant_high&returnUrl=http%3A%2F%2Ffinance.naver.com%2Fsise%2Fsise_quant_high.nhn%3Fsosok%3D0&fieldIds=quant&fieldIds=ask_buy&fieldIds=operating_profit&fieldIds=per&fieldIds=ask_sell&fieldIds=prev_quant')
+    json_table = []
     # print(chromedriver.current_url)
+    get_html_to_list(chromedriver, json_table, 'P')
+
+    # 코스닥
+    chromedriver.get('https://finance.naver.com/sise/field_submit.nhn?menu=quant_high&returnUrl=http%3A%2F%2Ffinance.naver.com%2Fsise%2Fsise_quant_high.nhn%3Fsosok%3D1&fieldIds=quant&fieldIds=ask_buy&fieldIds=operating_profit&fieldIds=per&fieldIds=ask_sell&fieldIds=prev_quant')
+    get_html_to_list(chromedriver, json_table, 'D')
+
+    # header : ['N', '증가율', '종목명', '현재가', '전일비', '등락률', '거래량', '전일거래량', '매수호가', '매도호가', '영업이익', 'PER']
+    json_table.sort(key=lambda r: r[7], reverse=True)  # 거래량 기준 정렬
+    # logger.debug(json_table)
+
+    for row in json_table[:10]:
+        buy_cd = row[0].split('-')[2]  # 종목코드
+        chk_proc_order = Proc.objects.filter(procorder__buy_cd=buy_cd, status=False)
+        if chk_proc_order.count() == 0:  # 거래 목록에 이미 있을 경우 저장하지 않음
+            new_proc = Proc.objects.create(name='N 거래량 급증 - ' + row[2], type_code='B', login_info_id=1)
+            new_proc.save()
+            new_proc_order = ProcOrder.objects.create(parent_id=new_proc.id, buy_cd_id=buy_cd, buy_price=row[3], buy_qty=1)
+            new_proc_order.save()
+
+    chromedriver.close()
+    logger.info("get_today_flip_order END !!!!")
+
+
+def get_html_to_list(chromedriver=None, json_table=None, sosok=''):  # 네이버 거래량 급증 화면 pare
     str_html = chromedriver.page_source
     # logger.debug(str_html)
     soup = BeautifulSoup(str_html, 'html.parser')
     result_table = soup.select('table.type_2 > tbody > tr')  #
-    json_table = [['N', '증가율', '종목명', '현재가', '전일비', '등락률', '거래량', '전일거래량', '매수호가', '매도호가', '영업이익', 'PER']]
-    for row in result_table:
-        td_data = []
-        for cell in row('td'):
-            try:
-                sub_value = re.sub(r'[^\d.]', '', cell.text)
-                if '.' in sub_value:
-                    value = float(sub_value)
-                else:
-                    value = int(sub_value)
-            except ValueError as e:
-                value = cell.text.strip()
-            td_data.append(value)
-        json_table.append(td_data)
-    logger.debug(json_table)
+    for row in result_table[1:]:
+        if row.text != '':
+            td_data = []
+            for i, cell in enumerate(row('td')):
+                try:
+                    if i == 2:
+                        href = cell.find('a')['href']
+                        query_str = urllib.parse.parse_qs(urllib.parse.urlparse(href).query)
+                        td_data[0] += '-' + query_str['code'][0]
 
-    chromedriver.close()
-    logger.info("get_today_flip_order END !!!!")
+                    if i == 0:
+                        value = sosok + '-' + cell.text
+                    elif not bool(re.match('[a-zA-Z가-힣_]', cell.text)):
+                        sub_value = re.sub(r'[^\d.]', '', cell.text)
+                        value = float(sub_value)
+                        if '.' not in sub_value:
+                            value = int(sub_value)
+                    else:
+                        value = cell.text.strip()
+                except ValueError as e:
+                    value = cell.text.strip()
+                td_data.append(value)
+            json_table.append(td_data)
