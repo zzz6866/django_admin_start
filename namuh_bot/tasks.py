@@ -12,7 +12,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.forms import model_to_dict
 
-from namuh_bot.models import Proc, CD, ProcOrder, ProcLogin
+from namuh_bot.models import Proc, CD, ProcOrder, ProcLogin, ProcValid
 from namuh_bot.namuh_structure import C8102InBlockStruct, C8101InBlockStruct
 from selenium_browser.selenium_browser import SeleniumBrowser
 
@@ -163,17 +163,25 @@ def get_today_trade_high_list():  # ## 네이버 거래량 급증 데이터 수�
     get_html_to_list(chromedriver, json_table, 'D')
 
     # header : ['N', '증가율', '종목명', '현재가', '전일비', '등락률', '거래량', '전일거래량', '매수호가', '매도호가', '영업이익', 'PER']
-    json_table.sort(key=lambda r: r[7], reverse=True)  # 거래량 기준 정렬
-    # logger.debug(json_table)
+    json_table.sort(key=lambda r: (-r[1], -r[6]))  # 기준 정렬
+    # [logger.debug(row) for row in json_table]
 
     for row in json_table[:10]:
         buy_cd = row[0].split('-')[2]  # 종목코드
         chk_proc_order = Proc.objects.filter(procorder__buy_cd=buy_cd, status=False)
-        if chk_proc_order.count() == 0:  # 거래 목록에 이미 있을 경우 저장하지 않음
+        if chk_proc_order.count() == 0 and False:  # 거래 목록에 이미 있을 경우 저장하지 않음
             new_proc = Proc.objects.create(name='네이버 거래량 급증 - ' + row[2], login_info_id=1)
             new_proc.save()
+
             new_proc_order = ProcOrder.objects.create(parent_id=new_proc.id, buy_cd_id=buy_cd, buy_price=row[3], buy_qty=1)
             new_proc_order.save()
+
+            new_proc_valid = ProcValid.objects.create(is_noon='AM', plus_value=1.5, plus_type_code='P', parent_id=new_proc_order.id)
+            new_proc_valid.save()
+
+            new_proc_valid.id = None
+            new_proc_valid.is_noon = 'PM'
+            new_proc_valid.save()
 
     chromedriver.close()
     logger.info("get_today_flip_order END !!!!")
