@@ -9,10 +9,9 @@ import win32api
 import win32con
 import win32gui
 
-from alldev.settings.base import BASE_DIR
 from namuh_bot.namuh_structure import *
 
-os.environ['PATH'] = ';'.join([os.environ['PATH'], BASE_DIR + r"\namuh_bot\bin"])
+os.environ['PATH'] = ';'.join([os.environ['PATH'], os.path.dirname(os.path.abspath(__file__)) + r"\bin"])
 
 from ctypes.wintypes import *
 
@@ -483,9 +482,6 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):  # simple ht
 def http_server_start():
     # request address, port
     import socket
-    f = open('../namuh_bot_ip', 'w')
-    f.write(socket.gethostbyname(socket.gethostname()))
-    f.close()
 
     address = (socket.gethostbyname(socket.gethostname()), 10003)
     # wait request

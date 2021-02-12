@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from namuh_bot.simple_http_request_handler import http_server_start
+
+from namuh_bot.namuh_windows import http_server_start
 
 
 # django 설정 사용 가능 class
