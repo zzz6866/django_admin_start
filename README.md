@@ -5,3 +5,24 @@
 
 # 환경
 python + django + celery + postgresql
+
+# git flow - https://mermaid-js.github.io/
+```mermaid
+---
+title: Example Git diagram
+---
+gitGraph
+   commit
+   commit
+   branch develop
+   checkout develop
+   commit
+   commit
+   checkout main
+   merge develop
+   commit
+   commit
+
+
+
+```
